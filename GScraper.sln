@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30717.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GScraper", "src\GScraper\GScraper.csproj", "{C01D3947-77B4-4E3E-80DF-4FD57C5667B1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GScraperExample", "examples\GScraperExample\GScraperExample.csproj", "{6C387D01-59DF-4DE6-A791-6FDB14F13495}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C01D3947-77B4-4E3E-80DF-4FD57C5667B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C01D3947-77B4-4E3E-80DF-4FD57C5667B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C01D3947-77B4-4E3E-80DF-4FD57C5667B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C01D3947-77B4-4E3E-80DF-4FD57C5667B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6C387D01-59DF-4DE6-A791-6FDB14F13495}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6C387D01-59DF-4DE6-A791-6FDB14F13495}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6C387D01-59DF-4DE6-A791-6FDB14F13495}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6C387D01-59DF-4DE6-A791-6FDB14F13495}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {14F11597-37C4-46FE-864F-EE505504BB5D}
+	EndGlobalSection
+EndGlobal
