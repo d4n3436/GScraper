@@ -163,12 +163,14 @@ namespace GScraper
             return url;
         }
 
+        /// <inheritdoc />
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <inheritdoc cref="Dispose()"/>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed) return;
