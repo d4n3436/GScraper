@@ -42,7 +42,7 @@
         public string DisplayLink { get; }
 
         /// <summary>
-        /// Gets A URL pointing to the webpage hosting the image.
+        /// Gets a URL pointing to the webpage hosting the image.
         /// </summary>
         public string ContextLink { get; }
 

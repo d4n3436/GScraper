@@ -19,10 +19,10 @@ namespace GScraper
         /// <summary>
         /// Returns the maximum number of images that can be returned per request.
         /// </summary>
-        public const int MaxLimit = 100;
+        public const int ImageLimit = 100;
 
         private readonly HttpClient _httpClient = new HttpClient();
-        private readonly string _userAgent = "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36";
+        private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36";
         private bool _disposed;
 
         /// <summary>
@@ -30,16 +30,16 @@ namespace GScraper
         /// </summary>
         public GoogleScraper()
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_userAgent);
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GoogleScraper"/> class with the provided User-Agent.
         /// </summary>
         /// <param name="userAgent">The User-Agent to use in the requests.</param>
-        public GoogleScraper(string userAgent) : this()
+        public GoogleScraper(string userAgent)
         {
-            _userAgent = userAgent;
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
         }
 
         /// <summary>
@@ -52,7 +52,7 @@ namespace GScraper
         /// <exception cref="ArgumentNullException">Thrown when <paramref name="query"/> is null or empty.</exception>
         /// <exception cref="HttpRequestException"/>
         /// <exception cref="GScraperException">Thrown when an error occurs during the scraping process.</exception>
-        public async Task<IReadOnlyList<ImageResult>> GetImagesAsync(string query, int limit = MaxLimit, bool safeSearch = false)
+        public async Task<IReadOnlyList<ImageResult>> GetImagesAsync(string query, int limit = ImageLimit, bool safeSearch = false)
         {
             if (string.IsNullOrEmpty(query))
             {
@@ -74,18 +74,19 @@ namespace GScraper
             }
 
             limit = Math.Max(limit, 1);
-            limit = Math.Min(limit, MaxLimit);
+            limit = Math.Min(limit, ImageLimit);
 
             var formattedImages = new List<ImageResult>();
 
             foreach (var rawImage in rawImages)
             {
-                if (formattedImages.Count == limit) break;
+                if (formattedImages.Count == limit)
+                    break;
 
                 var image = FormatImageObject(rawImage);
 
-                if (image == null) continue;
-                formattedImages.Add(image);
+                if (image != null)
+                    formattedImages.Add(image);
             }
 
             Debug.WriteLine($"[GScraper] {formattedImages.Count}/{limit} image objects.");
@@ -115,7 +116,7 @@ namespace GScraper
                 .FirstOrDefault()?
                 .ElementAtOrDefault(12)?
                 .ElementAtOrDefault(2)?
-                .Where(x => x?.FirstOrDefault()?.ValueOrDefault<int?>() == 1) ?? Enumerable.Empty<JToken>();
+                .Where(x => x?.FirstOrDefault()?.ValueOrDefault<int>() == 1) ?? Enumerable.Empty<JToken>();
         }
 
         private static ImageResult FormatImageObject(JToken obj)
@@ -124,12 +125,11 @@ namespace GScraper
             var main = data?.ElementAtOrDefault(3);
             var info = data?.ElementAtOrDefault(9);
 
-            if (data == null) return null;
+            if (data == null)
+                return null;
 
             if (string.IsNullOrEmpty(info?.ToString()))
-            {
                 info = data.ElementAtOrDefault(11);
-            }
 
             return new ImageResult(
                 main?.ElementAtOrDefault(2)?.ValueOrDefault<int?>(),
@@ -156,9 +156,7 @@ namespace GScraper
                          "&ved=0CAcQ_AUoAg";
 
             if (safeSearch)
-            {
                 url += "&safe=active";
-            }
 
             return url;
         }
@@ -175,9 +173,7 @@ namespace GScraper
         {
             if (_disposed) return;
             if (disposing)
-            {
                 _httpClient.Dispose();
-            }
 
             _disposed = true;
         }

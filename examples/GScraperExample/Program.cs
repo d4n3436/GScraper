@@ -18,13 +18,16 @@ namespace GScraperExample
             {
                 Console.Write("Query (enter \'e\' to exit): ");
                 string text = Console.ReadLine();
-                if (text == null || text == "e")
-                {
+
+                if (string.IsNullOrEmpty(text))
+                    continue;
+
+                if (text == "e")
                     break;
-                }
 
                 Console.Write("Limit?: ");
-                if (!int.TryParse(Console.ReadLine(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int limit)) continue;
+                if (!int.TryParse(Console.ReadLine(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int limit))
+                    continue;
 
                 IReadOnlyList<ImageResult> images;
                 try
