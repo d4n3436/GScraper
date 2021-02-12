@@ -102,8 +102,8 @@ namespace GScraper
             int endObject = page.LastIndexOf(']', page.IndexOf("</script>", startObject + 1, StringComparison.OrdinalIgnoreCase)) + 1;
             string rawObject = page.Substring(startObject, endObject - startObject);
 
-            // This will prevent Regex.Unescape() to unescape escaped quotes (\")
-            rawObject = rawObject.Replace("\\\"", "\\\\\"");
+            // This will prevent Regex.Unescape() to unescape escaped backlashes (\\)
+            rawObject = rawObject.Replace("\\", "\\\\");
 
             return Regex.Unescape(rawObject);
         }
