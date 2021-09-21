@@ -1,5 +1,5 @@
 # GScraper
 
-A scraper for Google Images made in C#.
+A collection of search engine image scrapers (Google Images, DuckDuckGo and Brave) in C#.
 
 See the [examples](examples) folder for an example program.
