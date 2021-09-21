@@ -1,31 +1,32 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard1.1</TargetFramework>
-    <Version>0.5.3</Version>
-    <Description>A scraper for Google Images.</Description>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <Version>1.0</Version>
+    <LangVersion>9</LangVersion>
+    <Nullable>enable</Nullable>
     <Authors>d4n3436</Authors>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <NeutralLanguage>en</NeutralLanguage>
     <RepositoryUrl>https://github.com/d4n3436/GScraper</RepositoryUrl>
-    <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageProjectUrl>https://github.com/d4n3436/GScraper</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gscraper;scraping;web-scraping;google;google-images</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>A collection of search engine image scrapers (Google Images, DuckDuckGo and Brave)</Description>
+    <PackageReleaseNotes>
+- Added 2 new scrapers (DuckDuckGo and Brave).
+- Now targeting .NET Standard 2.0.
+- Use System.Text.Json instead of Newtonsoft.Json, improving the performance and memory usage.
+- Added more customization options when requesting images, like image size, type, color, etc.
+    </PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\LICENSE">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
+    <PackageReference Include="System.Text.Json" Version="5.0.0" />
   </ItemGroup>
 
 </Project>
