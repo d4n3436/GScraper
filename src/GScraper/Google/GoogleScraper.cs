@@ -157,8 +157,8 @@ namespace GScraper.Google
                 .GetInt32OrDefault();
 
             string displayUrl = info
-                .GetPropertyOrDefault("183836587")
-                .FirstOrDefault()
+                .GetPropertyOrDefault("2003")
+                .ElementAtOrDefault(17)
                 .GetStringOrDefault();
 
             string sourceUrl = info
