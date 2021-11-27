@@ -122,7 +122,7 @@ namespace GScraper.Google
 
             return document.RootElement
                 .ElementAtOrDefault(31)
-                .FirstOrDefault()
+                .LastOrDefault()
                 .ElementAtOrDefault(12)
                 .ElementAtOrDefault(2);
         }

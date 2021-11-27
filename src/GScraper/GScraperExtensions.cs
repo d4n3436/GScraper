@@ -12,6 +12,9 @@ namespace GScraper
         public static JsonElement ElementAtOrDefault(this JsonElement element, int index)
             => element.ValueKind == JsonValueKind.Array ? element.EnumerateArray().ElementAtOrDefault(index) : default;
 
+        public static JsonElement LastOrDefault(this JsonElement element)
+        => element.ValueKind == JsonValueKind.Array ? element.EnumerateArray().LastOrDefault() : default;
+
         public static JsonElement GetPropertyOrDefault(this JsonElement element, string propertyName)
             => element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out var value) ? value : default;
 
