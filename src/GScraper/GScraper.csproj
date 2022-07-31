@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <LangVersion>9</LangVersion>
     <Nullable>enable</Nullable>
     <Authors>d4n3436</Authors>
@@ -14,11 +14,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gscraper;scraping;web-scraping;google;google-images;duckduckgo;brave</PackageTags>
-    <Description>A collection of search engine image scrapers (Google Images, DuckDuckGo and Brave)</Description>
-    <PackageReleaseNotes>
-- Fixed GoogleImageResult.DisplayUrl being empty.
-- Fixed bug in GoogleScraper image extractor that prevented returning images in some cases.
-    </PackageReleaseNotes>
+    <Description>A collection of search engine image scrapers (Google Images, DuckDuckGo and Brave).</Description>
+    <PackageReleaseNotes>https://github.com/d4n3436/GScraper/releases</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
