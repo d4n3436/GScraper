@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -18,6 +19,8 @@ namespace GScraper.Google
 
         private readonly HttpClient _httpClient;
         private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36";
+        private static readonly ReadOnlyMemory<byte> _payloadStart = Encoding.UTF8.GetBytes("AF_initDataCallback({key: 'ds:1'");
+        private static readonly ReadOnlyMemory<byte> _payloadEnd = Encoding.UTF8.GetBytes("</script>");
         private bool _disposed;
 
         /// <summary>
@@ -72,7 +75,7 @@ namespace GScraper.Google
 
             var uri = new Uri(BuildImageQuery(query, safeSearch, size, color, type, time, license, language), UriKind.Relative);
 
-            string page = await _httpClient.GetStringAsync(uri).ConfigureAwait(false);
+            byte[] page = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
 
             JsonElement rawImages;
             try
@@ -110,13 +113,14 @@ namespace GScraper.Google
             }
         }
 
-        private static JsonElement ExtractDataPack(string page)
+        private static JsonElement ExtractDataPack(byte[] page)
         {
             // Extract the JSON data pack from the page.
-            int startLine = page.IndexOf("AF_initDataCallback({key: 'ds:1'", StringComparison.Ordinal) - 10;
-            int startObject = page.IndexOf('[', startLine + 1);
-            int endObject = page.LastIndexOf(']', page.IndexOf("</script>", startObject + 1, StringComparison.Ordinal)) + 1;
-            var rawObject = page.AsMemory().Slice(startObject, endObject - startObject);
+            int start = page.AsSpan().IndexOf(_payloadStart.Span) - 10;
+            int startObject = page.AsSpan(start + 1).IndexOf((byte)'[') + start + 1;
+            int end = page.AsSpan(startObject + 1).IndexOf(_payloadEnd.Span) + startObject + 1;
+            int endObject = page.AsSpan(0, end).LastIndexOf((byte)']') + 1;
+            var rawObject = page.AsMemory(startObject, endObject - startObject);
 
             var document = JsonDocument.Parse(rawObject);
 
