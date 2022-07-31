@@ -26,14 +26,16 @@ namespace GScraper.Google
         /// <summary>
         /// Initializes a new instance of the <see cref="GoogleScraper"/> class.
         /// </summary>
-        public GoogleScraper() : this(new HttpClient())
+        public GoogleScraper()
+            : this(new HttpClient(new HttpClientHandler { UseCookies = false })) // Disable cookies so we can set the consent cookie in the request.
         {
         }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="GoogleScraper"/> class using the provided <see cref="HttpClient"/>.
         /// </summary>
-        public GoogleScraper(HttpClient client) : this(client, DefaultApiEndpoint)
+        public GoogleScraper(HttpClient client)
+            : this(client, DefaultApiEndpoint)
         {
         }
 
@@ -46,6 +48,7 @@ namespace GScraper.Google
             GScraperGuards.NotNullOrEmpty(apiEndpoint, nameof(apiEndpoint));
             _httpClient = client;
             _httpClient.BaseAddress = new Uri(apiEndpoint);
+
             if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
             {
                 _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
@@ -75,7 +78,17 @@ namespace GScraper.Google
 
             var uri = new Uri(BuildImageQuery(query, safeSearch, size, color, type, time, license, language), UriKind.Relative);
 
-            byte[] page = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
+            using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+
+            // Set the CONSENT cookie in the request to bypass the cookie consent page.
+            // This might now work if the scraper is instantiated with a HttpClient handler that has cookies enabled.
+            // On newer version of .NET this cookie will be added regardless of the setting mentioned above.
+            request.Headers.Add("Cookie", "CONSENT=YES+");
+
+            using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+            response.EnsureSuccessStatusCode();
+
+            byte[] page = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
 
             JsonElement rawImages;
             try
