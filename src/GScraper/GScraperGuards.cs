@@ -1,31 +1,30 @@
 ﻿using System;
 
-namespace GScraper
+namespace GScraper;
+
+internal static class GScraperGuards
 {
-    internal static class GScraperGuards
+    public static void NotNull<T>(T? obj, string parameterName) where T : class
     {
-        public static void NotNull<T>(T? obj, string parameterName) where T : class
+        if (obj is null)
         {
-            if (obj is null)
-            {
-                throw new ArgumentNullException(parameterName);
-            }
+            throw new ArgumentNullException(parameterName);
         }
+    }
 
-        public static void NotNullOrEmpty(string? str, string parameterName)
+    public static void NotNullOrEmpty(string? str, string parameterName)
+    {
+        if (string.IsNullOrEmpty(str))
         {
-            if (string.IsNullOrEmpty(str))
-            {
-                throw new ArgumentNullException(parameterName);
-            }
+            throw new ArgumentNullException(parameterName);
         }
+    }
 
-        public static void ArgumentInRange(int length, int max, string parameterName, string message)
+    public static void ArgumentInRange(int length, int max, string parameterName, string message)
+    {
+        if (length > max)
         {
-            if (length > max)
-            {
-                throw new ArgumentOutOfRangeException(parameterName, message);
-            }
+            throw new ArgumentOutOfRangeException(parameterName, message);
         }
     }
 }

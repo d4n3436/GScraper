@@ -1,23 +1,22 @@
-﻿namespace GScraper
+﻿namespace GScraper;
+
+/// <summary>
+/// Specifies the Safe Search levels.
+/// </summary>
+public enum SafeSearchLevel
 {
     /// <summary>
-    /// Specifies the Safe Search levels.
+    /// Safe Search is off.
     /// </summary>
-    public enum SafeSearchLevel
-    {
-        /// <summary>
-        /// Safe Search is off.
-        /// </summary>
-        Off,
+    Off,
 
-        /// <summary>
-        /// Don't show explicit results.
-        /// </summary>
-        Moderate,
+    /// <summary>
+    /// Don't show explicit results.
+    /// </summary>
+    Moderate,
 
-        /// <summary>
-        /// Strict safe search.
-        /// </summary>
-        Strict
-    }
+    /// <summary>
+    /// Strict safe search.
+    /// </summary>
+    Strict
 }
