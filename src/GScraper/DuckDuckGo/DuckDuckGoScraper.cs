@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -20,6 +21,8 @@ public class DuckDuckGoScraper : IDisposable
     /// Returns the maximum query length.
     /// </summary>
     public const int MaxQueryLength = 500;
+
+    private static ReadOnlySpan<byte> TokenStart => new[] { (byte)'v', (byte)'d', (byte)'q', (byte)'=', (byte)'\'' };
 
     private readonly HttpClient _httpClient;
     private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36";
@@ -149,32 +152,35 @@ public class DuckDuckGoScraper : IDisposable
 
         return url;
     }
-
+    
     private async Task<string> GetTokenAsync(string keywords)
     {
-        string html = await _httpClient.GetStringAsync(new Uri($"?q={Uri.EscapeDataString(keywords)}", UriKind.Relative)).ConfigureAwait(false);
-        return GetToken(html.AsSpan());
+        byte[] bytes = await _httpClient.GetByteArrayAsync(new Uri($"?q={Uri.EscapeDataString(keywords)}", UriKind.Relative)).ConfigureAwait(false);
+        return GetToken(bytes);
     }
-
-    private static string GetToken(ReadOnlySpan<char> rawHtml)
+    
+    private static string GetToken(ReadOnlySpan<byte> rawHtml)
     {
-        const string start = "vqd='";
-        int startIndex = rawHtml.IndexOf(start.AsSpan()) + start.Length;
+        int startIndex = rawHtml.IndexOf(TokenStart);
 
         if (startIndex == -1)
         {
             throw new GScraperException("Failed to get the DuckDuckGo token.", "DuckDuckGo");
         }
 
-        var sliced = rawHtml.Slice(startIndex);
-        int endIndex = sliced.IndexOf('\'');
+        var sliced = rawHtml.Slice(startIndex + TokenStart.Length);
+        int endIndex = sliced.IndexOf((byte)'\'');
 
         if (endIndex == -1)
         {
             throw new GScraperException("Failed to get the DuckDuckGo token.", "DuckDuckGo");
         }
 
-        return sliced.Slice(0, endIndex).ToString();
+#if NETSTANDARD2_1_OR_GREATER
+        return Encoding.UTF8.GetString(sliced.Slice(0, endIndex));
+#else
+        return Encoding.UTF8.GetString(sliced.Slice(0, endIndex).ToArray());
+#endif
     }
 
     /// <inheritdoc />
