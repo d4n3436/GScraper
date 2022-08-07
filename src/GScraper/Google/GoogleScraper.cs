@@ -35,18 +35,26 @@ public class GoogleScraper : IDisposable
     /// Initializes a new instance of the <see cref="GoogleScraper"/> class using the provided <see cref="HttpClient"/>.
     /// </summary>
     public GoogleScraper(HttpClient client)
-        : this(client, DefaultApiEndpoint)
     {
+        _httpClient = client;
+        Init(_httpClient, DefaultApiEndpoint);
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GoogleScraper"/> class using the provided <see cref="HttpClient"/> and API endpoint.
     /// </summary>
+    [Obsolete("This constructor is deprecated and it will be removed in a future version. Use GoogleScraper(HttpClient) instead.")]
     public GoogleScraper(HttpClient client, string apiEndpoint)
+    {
+        _httpClient = client;
+        Init(_httpClient, apiEndpoint);
+    }
+
+    private void Init(HttpClient client, string apiEndpoint)
     {
         GScraperGuards.NotNull(client, nameof(client));
         GScraperGuards.NotNullOrEmpty(apiEndpoint, nameof(apiEndpoint));
-        _httpClient = client;
+
         _httpClient.BaseAddress = new Uri(apiEndpoint);
 
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)

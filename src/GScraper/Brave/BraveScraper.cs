@@ -23,26 +23,37 @@ public class BraveScraper : IDisposable
     /// <summary>
     /// Initializes a new instance of the <see cref="BraveScraper"/> class.
     /// </summary>
-    public BraveScraper() : this(new HttpClient())
+    public BraveScraper()
+        : this(new HttpClient())
     {
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BraveScraper"/> class using the provided <see cref="HttpClient"/>.
     /// </summary>
-    public BraveScraper(HttpClient client) : this(client, DefaultApiEndpoint)
+    public BraveScraper(HttpClient client)
     {
+        _httpClient = client;
+        Init(_httpClient, DefaultApiEndpoint);
     }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BraveScraper"/> class using the provided <see cref="HttpClient"/> and API endpoint.
     /// </summary>
+    [Obsolete("This constructor is deprecated and it will be removed in a future version. Use BraveScraper(HttpClient) instead.")]
     public BraveScraper(HttpClient client, string apiEndpoint)
+    {
+        _httpClient = client;
+        Init(_httpClient, apiEndpoint);
+    }
+
+    private void Init(HttpClient client, string apiEndpoint)
     {
         GScraperGuards.NotNull(client, nameof(client));
         GScraperGuards.NotNullOrEmpty(apiEndpoint, nameof(apiEndpoint));
-        _httpClient = client;
+
         _httpClient.BaseAddress = new Uri(apiEndpoint);
+
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
