@@ -22,7 +22,7 @@ public class DuckDuckGoScraper : IDisposable
     /// </summary>
     public const int MaxQueryLength = 500;
 
-    private static ReadOnlySpan<byte> TokenStart => new[] { (byte)'v', (byte)'d', (byte)'q', (byte)'=', (byte)'\'' };
+    private static ReadOnlySpan<byte> TokenStart => new[] { (byte)'v', (byte)'q', (byte)'d', (byte)'=', (byte)'\'' };
 
     private readonly HttpClient _httpClient;
     private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36";
@@ -66,6 +66,8 @@ public class DuckDuckGoScraper : IDisposable
         {
             _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
         }
+
+        _httpClient.DefaultRequestHeaders.Referrer = _httpClient.BaseAddress;
     }
 
     /// <summary>
@@ -97,27 +99,9 @@ public class DuckDuckGoScraper : IDisposable
         string token = await GetTokenAsync(query);
         var uri = new Uri($"i.js{BuildImageQuery(token, query, safeSearch, time, size, color, type, layout, license, region)}", UriKind.Relative);
 
-        byte[] bytes;
-        using (var request = new HttpRequestMessage())
-        {
-            request.Method = HttpMethod.Get;
-            request.RequestUri = uri;
+        var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
 
-            if (safeSearch == SafeSearchLevel.Strict)
-            {
-                request.Headers.Add("cookie", "p=1");
-            }
-            else if (safeSearch == SafeSearchLevel.Off)
-            {
-                request.Headers.Add("cookie", "p=-2");
-            }
-            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-        }
-
-        var document = JsonDocument.Parse(bytes);
+        var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
         var results = document.RootElement.GetPropertyOrDefault("results");
 
         return EnumerateResults(results);
