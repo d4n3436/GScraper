@@ -16,7 +16,7 @@ public enum BraveImageType
     /// <summary>
     /// Clip Art.
     /// </summary>
-    Cliparts,
+    Clipart,
     /// <summary>
     /// Animated GIF.
     /// </summary>

@@ -81,44 +81,27 @@ public class BraveScraper : IDisposable
     {
         GScraperGuards.NotNull(query, nameof(query));
 
-        byte[] bytes;
-        using (var request = new HttpRequestMessage())
-        {
-            string cookie = $"safesearch={safeSearch.ToString().ToLowerInvariant()}";
-            if (!string.IsNullOrEmpty(country))
-            {
-                cookie += $"; country={country}";
-            }
+        var uri = new Uri(BuildImageQuery(query, safeSearch, country, size, type, layout, color, license), UriKind.Relative);
 
-            request.Method = HttpMethod.Get;
-            request.RequestUri = new Uri(BuildImageQuery(query, size, type, layout, color, license), UriKind.Relative);
-            request.Headers.Add("cookie", cookie);
+        var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
 
-            var response = await _httpClient.SendAsync(request).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-        }
-
-        var document = JsonDocument.Parse(bytes);
-        var results = document.RootElement.GetPropertyOrDefault("results");
+        var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+        var results = document.RootElement.GetProperty("results");
 
         return EnumerateResults(results);
     }
 
-    private static string BuildImageQuery(string query, BraveImageSize size, BraveImageType type,
+    private static string BuildImageQuery(string query, SafeSearchLevel safeSearch, string? country, BraveImageSize size, BraveImageType type,
         BraveImageLayout layout, BraveImageColor color, BraveImageLicense license)
     {
         string url = $"images?q={Uri.EscapeDataString(query)}";
 
-        // Doesn't seem to work via query strings
-        /*
-        if (level != SafeSearchLevel.Moderate)
-            url += $"&safesearch={level.ToString().ToLowerInvariant()}";
+        
+        if (safeSearch != SafeSearchLevel.Moderate)
+            url += $"&safesearch={safeSearch.ToString().ToLowerInvariant()}";
 
         if (!string.IsNullOrEmpty(country))
             url += $"&country={country}";
-        */
 
         if (size != BraveImageSize.All)
             url += $"&size={size}";
@@ -140,24 +123,19 @@ public class BraveScraper : IDisposable
 
     private static IEnumerable<BraveImageResult> EnumerateResults(JsonElement results)
     {
-        if (results.ValueKind != JsonValueKind.Array)
-        {
-            yield break;
-        }
-
         foreach (var result in results.EnumerateArray())
         {
-            var properties = result.GetPropertyOrDefault("properties");
-            string url = properties.GetPropertyOrDefault("url").GetStringOrDefault();
-            string title = result.GetPropertyOrDefault("title").GetStringOrDefault();
-            int width = properties.GetPropertyOrDefault("width").GetInt32OrDefault();
-            int height = properties.GetPropertyOrDefault("height").GetInt32OrDefault();
-            string sourceUrl = result.GetPropertyOrDefault("url").GetStringOrDefault();
-            var pageAge = result.GetPropertyOrDefault("page_age").GetDateTimeOffsetOrDefault();
-            string source = result.GetPropertyOrDefault("source").GetStringOrDefault();
-            string thumbnailUrl = result.GetPropertyOrDefault("thumbnail").GetPropertyOrDefault("src").GetStringOrDefault();
-            string resizedUrl = properties.GetPropertyOrDefault("resized").GetStringOrDefault();
-            string format = properties.GetPropertyOrDefault("format").GetStringOrDefault();
+            var properties = result.GetProperty("properties");
+            string url = properties.GetProperty("url").GetString() ?? string.Empty;
+            string title = result.GetProperty("title").GetString() ?? string.Empty;
+            int width = properties.GetProperty("width").GetInt32();
+            int height = properties.GetProperty("height").GetInt32();
+            string sourceUrl = result.GetProperty("url").GetString() ?? string.Empty;
+            var pageAge = result.GetProperty("page_age").GetDateTimeOffset();
+            string source = result.GetProperty("source").GetString() ?? string.Empty;
+            string thumbnailUrl = result.GetProperty("thumbnail").GetProperty("src").GetString() ?? string.Empty;
+            string resizedUrl = properties.GetProperty("resized").GetString() ?? string.Empty;
+            string format = properties.GetProperty("format").GetString() ?? string.Empty;
 
             yield return new BraveImageResult(url, title, width, height, sourceUrl, pageAge, source, thumbnailUrl, resizedUrl, format);
         }

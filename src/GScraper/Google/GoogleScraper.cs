@@ -17,10 +17,11 @@ public class GoogleScraper : IDisposable
     /// </summary>
     public const string DefaultApiEndpoint = "https://www.google.com/search";
 
+    private static ReadOnlySpan<byte> CallbackStart => Encoding.UTF8.GetBytes("AF_initDataCallback({key: 'ds:1'");
+    private static ReadOnlySpan<byte> CallbackEnd => Encoding.UTF8.GetBytes(", sideChannel: {}});</script>");
+
     private readonly HttpClient _httpClient;
     private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36";
-    private static readonly ReadOnlyMemory<byte> _payloadStart = Encoding.UTF8.GetBytes("AF_initDataCallback({key: 'ds:1'");
-    private static readonly ReadOnlyMemory<byte> _payloadEnd = Encoding.UTF8.GetBytes("</script>");
     private bool _disposed;
 
     /// <summary>
@@ -98,29 +99,16 @@ public class GoogleScraper : IDisposable
 
         byte[] page = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
 
-        JsonElement rawImages;
-        try
-        {
-            rawImages = ExtractDataPack(page);
-        }
-        catch (Exception e) when (e is ArgumentOutOfRangeException or JsonException)
-        {
-            throw new GScraperException("Failed to unpack the image object data.", "Google", e);
-        }
+        var rawImages = ExtractDataPack(page);
 
         return EnumerateResults(rawImages);
     }
 
     private static IEnumerable<GoogleImageResult> EnumerateResults(JsonElement rawImages)
     {
-        if (rawImages.ValueKind != JsonValueKind.Array)
-        {
-            yield break;
-        }
-
         foreach (var rawImage in rawImages.EnumerateArray())
         {
-            if (rawImage.FirstOrDefault().GetInt32OrDefault() != 1)
+            if (rawImage[0].GetInt32() != 1)
             {
                 continue;
             }
@@ -137,64 +125,78 @@ public class GoogleScraper : IDisposable
     private static JsonElement ExtractDataPack(byte[] page)
     {
         // Extract the JSON data pack from the page.
-        int start = page.AsSpan().IndexOf(_payloadStart.Span) - 10;
-        int startObject = page.AsSpan(start + 1).IndexOf((byte)'[') + start + 1;
-        int end = page.AsSpan(startObject + 1).IndexOf(_payloadEnd.Span) + startObject + 1;
-        int endObject = page.AsSpan(0, end).LastIndexOf((byte)']') + 1;
-        var rawObject = page.AsMemory(startObject, endObject - startObject);
+        var span = page.AsSpan();
 
-        var document = JsonDocument.Parse(rawObject);
+        int callbackStartIndex = span.IndexOf(CallbackStart);
+        if (callbackStartIndex == -1)
+        {
+            throw new GScraperException("Failed to extract the data pack.", "Google");
+        }
 
-        return document.RootElement
-            .ElementAtOrDefault(31)
-            .LastOrDefault()
-            .ElementAtOrDefault(12)
-            .ElementAtOrDefault(2);
+        int start = span.Slice(callbackStartIndex).IndexOf((byte)'[');
+        if (start == -1)
+        {
+            throw new GScraperException("Failed to extract the data pack.", "Google");
+        }
+
+        start += callbackStartIndex;
+
+        int callbackEndIndex = span.Slice(start).IndexOf(CallbackEnd);
+        if (callbackEndIndex == -1)
+        {
+            throw new GScraperException("Failed to extract the data pack.", "Google");
+        }
+
+        int end = span.Slice(0, callbackEndIndex + start).LastIndexOf((byte)']') + 1;
+        if (end == -1)
+        {
+            throw new GScraperException("Failed to extract the data pack.", "Google");
+        }
+
+        var rawObject = page.AsMemory(start, end - start);
+
+        try
+        {
+            return JsonDocument.Parse(rawObject).RootElement[31].Last()[12][2];
+        }
+        catch (JsonException e)
+        {
+            throw new GScraperException("Failed to unpack the image object data.", "Google", e);
+        }
     }
 
-    private static GoogleImageResult? FormatImageObject(JsonElement element)
+    private static GoogleImageResult? FormatImageObject(in JsonElement element)
     {
-        var data = element.ElementAtOrDefault(1);
+        var data = element[1];
         if (data.ValueKind != JsonValueKind.Array)
             return null;
 
-        var main = data.ElementAtOrDefault(3);
-        var info = data.ElementAtOrDefault(9);
+        var main = data[3];
+        var info = data[9];
 
         if (info.ValueKind != JsonValueKind.Object)
-            info = data.ElementAtOrDefault(11);
+            info = data[11];
 
-        string url = main
-            .FirstOrDefault()
-            .GetStringOrDefault();
+        string url = main[0].GetString() ?? string.Empty;
 
         string title = info
-            .GetPropertyOrDefault("2003")
-            .ElementAtOrDefault(3)
-            .GetStringOrDefault();
+            .GetProperty("2003")[3]
+            .GetString() ?? string.Empty;
 
-        int width = main
-            .ElementAtOrDefault(2)
-            .GetInt32OrDefault();
+        int width = main[2].GetInt32();
 
-        int height = main
-            .ElementAtOrDefault(1)
-            .GetInt32OrDefault();
+        int height = main[1].GetInt32();
 
         string displayUrl = info
-            .GetPropertyOrDefault("2003")
-            .ElementAtOrDefault(17)
-            .GetStringOrDefault();
+            .GetProperty("2003")[17]
+            .GetString() ?? string.Empty;
 
         string sourceUrl = info
-            .GetPropertyOrDefault("2003")
-            .ElementAtOrDefault(2)
-            .GetStringOrDefault();
+            .GetProperty("2003")[2]
+            .GetString() ?? string.Empty;
 
-        string thumbnailUrl = data
-            .ElementAtOrDefault(2)
-            .FirstOrDefault()
-            .GetStringOrDefault();
+        string thumbnailUrl = data[2][0]
+            .GetString() ?? string.Empty;
 
         return new GoogleImageResult(url, title, width, height, displayUrl, sourceUrl, thumbnailUrl);
     }
@@ -210,15 +212,10 @@ public class GoogleScraper : IDisposable
         url += time == GoogleImageTime.Any ? ',' : $"qdr:{(char)time},";
         url += string.IsNullOrEmpty(license) ? "" : $"il:{license}";
 
-        url += "&espv=2" +
-               "&biw=1366" +
-               "&bih=667" +
-               "&site=webhp" +
+        url += "&site=webhp" +
                "&source=lnms" +
                "&tbm=isch" +
-               "&sa=X" +
-               "&ei=XosDVaCXD8TasATItgE" +
-               "&ved=0CAcQ_AUoAg";
+               "&sa=X";
 
         url += "&safe=" + safeSearch switch
         {
