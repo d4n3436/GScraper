@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Net.Http;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -17,18 +17,15 @@ public class GoogleScraper : IDisposable
     /// </summary>
     public const string DefaultApiEndpoint = "https://www.google.com/search";
 
-    private static ReadOnlySpan<byte> CallbackStart => Encoding.UTF8.GetBytes("AF_initDataCallback({key: 'ds:1'");
-    private static ReadOnlySpan<byte> CallbackEnd => Encoding.UTF8.GetBytes(", sideChannel: {}});</script>");
-
     private readonly HttpClient _httpClient;
-    private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
+    private const string _defaultUserAgent = "NSTN/3.62.475170463.release Dalvik/2.1.0 (Linux; U; Android 12) Mobile";
     private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="GoogleScraper"/> class.
     /// </summary>
     public GoogleScraper()
-        : this(new HttpClient(new HttpClientHandler { UseCookies = false })) // Disable cookies so we can set the consent cookie in the request.
+        : this(new HttpClient())
     {
     }
 
@@ -86,125 +83,88 @@ public class GoogleScraper : IDisposable
         GScraperGuards.NotNull(query, nameof(query));
 
         var uri = new Uri(BuildImageQuery(query, safeSearch, size, color, type, time, license, language), UriKind.Relative);
+        byte[] bytes = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        using var document = JsonDocument.Parse(bytes.AsMemory(5, bytes.Length - 5));
 
-        // Set the CONSENT cookie in the request to bypass the cookie consent page.
-        // This might now work if the scraper is instantiated with a HttpClient handler that has cookies enabled.
-        // On newer version of .NET this cookie will be added regardless of the setting mentioned above.
-        request.Headers.Add("Cookie", "CONSENT=YES+");
+        bool any = document
+            .RootElement
+            .GetProperty("ischj")
+            .TryGetProperty("metadata", out var rawResults);
 
-        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
+        if (!any)
+        {
+            return Array.Empty<GoogleImageResult>();
+        }
 
-        byte[] page = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+        int length = rawResults.GetArrayLength();
+        var results = new GoogleImageResult[length];
 
-        var rawImages = ExtractDataPack(page);
+        for (int i = 0; i < length; i++)
+        {
+            results[i] = GetImageResult(rawResults[i]);
+        }
 
-        return EnumerateResults(rawImages);
+        return Array.AsReadOnly(results);
     }
 
-    private static IEnumerable<GoogleImageResult> EnumerateResults(JsonElement rawImages)
+    private static GoogleImageResult GetImageResult(in JsonElement element)
     {
-        foreach (var rawImage in rawImages.EnumerateArray())
-        {
-            if (rawImage[0].GetInt32() != 1)
-            {
-                continue;
-            }
+        var result = element.GetProperty("result");
+        var originalImage = element.GetProperty("original_image");
 
-            var image = FormatImageObject(rawImage);
+        var color = GetColor(element.GetProperty("background_color").GetString().AsSpan());
+        int height = originalImage.GetProperty("height").GetInt32();
+        string url = originalImage.GetProperty("url").GetString() ?? throw new GScraperException("Unable to get the URL of the image result.", "Google");
+        int width = originalImage.GetProperty("width").GetInt32();
+        string sourceUrl = result.GetProperty("referrer_url").GetString() ?? throw new GScraperException("Unable to get the source URL of the image result.", "Google");
+        string displayUrl = result.GetProperty("image_source_url").GetString() ?? throw new GScraperException("Unable to get the display URL of the image result.", "Google");
+        string title = result.GetProperty("page_title").GetString() ?? throw new GScraperException("Unable to get the title of the image result.", "Google");
+        string thumbnailUrl = element.GetProperty("thumbnail").GetProperty("url").GetString() ?? throw new GScraperException("Unable to get the thumbnail URL of the image result.", "Google");
 
-            if (image != null)
-            {
-                yield return image;
-            }
-        }
+        return new GoogleImageResult(url, title, width, height, color, displayUrl, sourceUrl, thumbnailUrl);
     }
 
-    private static JsonElement ExtractDataPack(byte[] page)
+    private static Color? GetColor(ReadOnlySpan<char> rgb)
     {
-        // Extract the JSON data pack from the page.
-        var span = page.AsSpan();
+        const string start = "rgb(";
 
-        int callbackStartIndex = span.IndexOf(CallbackStart);
-        if (callbackStartIndex == -1)
-        {
-            throw new GScraperException("Failed to extract the data pack.", "Google");
-        }
+        if (!rgb.StartsWith(start.AsSpan())) return default;
 
-        int start = span.Slice(callbackStartIndex).IndexOf((byte)'[');
-        if (start == -1)
-        {
-            throw new GScraperException("Failed to extract the data pack.", "Google");
-        }
+        rgb = rgb.Slice(start.Length);
 
-        start += callbackStartIndex;
+        // R
+        int index = rgb.IndexOf(',');
+        if (index == -1 || !TryParseInt(rgb.Slice(0, index), out int r)) return default;
 
-        int callbackEndIndex = span.Slice(start).IndexOf(CallbackEnd);
-        if (callbackEndIndex == -1)
-        {
-            throw new GScraperException("Failed to extract the data pack.", "Google");
-        }
+        rgb = rgb.Slice(index + 1);
 
-        int end = span.Slice(0, callbackEndIndex + start).LastIndexOf((byte)']') + 1;
-        if (end == -1)
-        {
-            throw new GScraperException("Failed to extract the data pack.", "Google");
-        }
+        // G
+        index = rgb.IndexOf(',');
+        if (index == -1 || !TryParseInt(rgb.Slice(0, index), out int g)) return default;
 
-        var rawObject = page.AsMemory(start, end - start);
+        rgb = rgb.Slice(index + 1);
 
-        try
-        {
-            return JsonDocument.Parse(rawObject).RootElement[31].Last()[12][2];
-        }
-        catch (JsonException e)
-        {
-            throw new GScraperException("Failed to unpack the image object data.", "Google", e);
-        }
+        // G
+        index = rgb.IndexOf(')');
+        if (index == -1 || !TryParseInt(rgb.Slice(0, index), out int b)) return default;
+
+        return Color.FromArgb(r, g, b);
     }
 
-    private static GoogleImageResult? FormatImageObject(in JsonElement element)
+    private static bool TryParseInt(ReadOnlySpan<char> s, out int result)
     {
-        var data = element[1];
-        if (data.ValueKind != JsonValueKind.Array)
-            return null;
-
-        var main = data[3];
-        var info = data[9];
-
-        if (info.ValueKind != JsonValueKind.Object)
-            info = data[11];
-
-        string url = main[0].GetString() ?? string.Empty;
-
-        string title = info
-            .GetProperty("2003")[3]
-            .GetString() ?? string.Empty;
-
-        int width = main[2].GetInt32();
-
-        int height = main[1].GetInt32();
-
-        string displayUrl = info
-            .GetProperty("2003")[17]
-            .GetString() ?? string.Empty;
-
-        string sourceUrl = info
-            .GetProperty("2003")[2]
-            .GetString() ?? string.Empty;
-
-        string thumbnailUrl = data[2][0]
-            .GetString() ?? string.Empty;
-
-        return new GoogleImageResult(url, title, width, height, displayUrl, sourceUrl, thumbnailUrl);
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
+        return int.TryParse(s, out result);
+#else
+        return int.TryParse(s.ToString(), out result);
+#endif
     }
 
     private static string BuildImageQuery(string query, SafeSearchLevel safeSearch, GoogleImageSize size, string? color,
         GoogleImageType type, GoogleImageTime time, string? license, string? language)
     {
-        string url = $"?q={Uri.EscapeDataString(query)}&tbs=";
+        string url = $"?q={Uri.EscapeDataString(query)}&tbm=isch&asearch=isch&async=_fmt:json,p:1&tbs=";
 
         url += size == GoogleImageSize.Any ? ',' : $"isz:{(char)size},";
         url += string.IsNullOrEmpty(color) ? ',' : $"ic:{color},";
@@ -212,17 +172,10 @@ public class GoogleScraper : IDisposable
         url += time == GoogleImageTime.Any ? ',' : $"qdr:{(char)time},";
         url += string.IsNullOrEmpty(license) ? "" : $"il:{license}";
 
-        url += "&site=webhp" +
-               "&source=lnms" +
-               "&tbm=isch" +
-               "&sa=X";
-
         url += "&safe=" + safeSearch switch
         {
             SafeSearchLevel.Off => "off",
-            SafeSearchLevel.Moderate => "medium",
-            SafeSearchLevel.Strict => "high",
-            _ => throw new ArgumentException("Invalid safe search level.", nameof(safeSearch))
+            _ => "active"
         };
 
         if (!string.IsNullOrEmpty(language))

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Drawing;
 
 namespace GScraper;
 
@@ -8,13 +9,14 @@ namespace GScraper;
 [DebuggerDisplay("Title: {Title}, Url: {Url}")]
 public class GoogleImageResult : IImageResult
 {
-    internal GoogleImageResult(string url, string title, int width, int height, string displayUrl,
-        string sourceUrl, string thumbnailUrl)
+    internal GoogleImageResult(string url, string title, int width, int height,
+        Color? color, string displayUrl, string sourceUrl, string thumbnailUrl)
     {
         Url = url;
         Title = title;
         Width = width;
         Height = height;
+        Color = color;
         DisplayUrl = displayUrl;
         SourceUrl = sourceUrl;
         ThumbnailUrl = thumbnailUrl;
@@ -31,6 +33,11 @@ public class GoogleImageResult : IImageResult
 
     /// <inheritdoc/>
     public int Height { get; }
+
+    /// <summary>
+    /// Gets the background color of this result.
+    /// </summary>
+    public Color? Color { get; }
 
     /// <summary>
     /// Gets an abridged version of <see cref="SourceUrl"/>, e.g. www.example.com.
