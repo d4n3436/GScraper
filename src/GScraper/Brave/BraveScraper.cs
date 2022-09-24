@@ -16,8 +16,10 @@ public class BraveScraper : IDisposable
     /// </summary>
     public const string DefaultApiEndpoint = "https://search.brave.com/api/";
 
-    private readonly HttpClient _httpClient;
     private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
+    private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
+
+    private readonly HttpClient _httpClient;
     private bool _disposed;
 
     /// <summary>
@@ -34,7 +36,7 @@ public class BraveScraper : IDisposable
     public BraveScraper(HttpClient client)
     {
         _httpClient = client;
-        Init(_httpClient, DefaultApiEndpoint);
+        Init(_httpClient, _defaultBaseAddress);
     }
 
     /// <summary>
@@ -44,15 +46,15 @@ public class BraveScraper : IDisposable
     public BraveScraper(HttpClient client, string apiEndpoint)
     {
         _httpClient = client;
-        Init(_httpClient, apiEndpoint);
+        Init(_httpClient, new Uri(apiEndpoint));
     }
 
-    private void Init(HttpClient client, string apiEndpoint)
+    private void Init(HttpClient client, Uri apiEndpoint)
     {
         GScraperGuards.NotNull(client, nameof(client));
-        GScraperGuards.NotNullOrEmpty(apiEndpoint, nameof(apiEndpoint));
+        GScraperGuards.NotNull(apiEndpoint, nameof(apiEndpoint));
 
-        _httpClient.BaseAddress = new Uri(apiEndpoint);
+        _httpClient.BaseAddress = apiEndpoint;
 
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {

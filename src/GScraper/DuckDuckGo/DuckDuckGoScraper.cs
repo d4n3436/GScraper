@@ -24,8 +24,10 @@ public class DuckDuckGoScraper : IDisposable
 
     private static ReadOnlySpan<byte> TokenStart => new[] { (byte)'v', (byte)'q', (byte)'d', (byte)'=', (byte)'\'' };
 
-    private readonly HttpClient _httpClient;
     private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
+    private static  readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
+
+    private readonly HttpClient _httpClient;
     private bool _disposed;
 
     /// <summary>
@@ -42,7 +44,7 @@ public class DuckDuckGoScraper : IDisposable
     public DuckDuckGoScraper(HttpClient client)
     {
         _httpClient = client;
-        Init(_httpClient, DefaultApiEndpoint);
+        Init(_httpClient, _defaultBaseAddress);
     }
 
     /// <summary>
@@ -52,15 +54,15 @@ public class DuckDuckGoScraper : IDisposable
     public DuckDuckGoScraper(HttpClient client, string apiEndpoint)
     {
         _httpClient = client;
-        Init(_httpClient, apiEndpoint);
+        Init(_httpClient, new Uri(apiEndpoint));
     }
 
-    private void Init(HttpClient client, string apiEndpoint)
+    private void Init(HttpClient client, Uri apiEndpoint)
     {
         GScraperGuards.NotNull(client, nameof(client));
-        GScraperGuards.NotNullOrEmpty(apiEndpoint, nameof(apiEndpoint));
+        GScraperGuards.NotNull(apiEndpoint, nameof(apiEndpoint));
         
-        _httpClient.BaseAddress = new Uri(apiEndpoint);
+        _httpClient.BaseAddress = apiEndpoint;
         
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {
@@ -97,7 +99,7 @@ public class DuckDuckGoScraper : IDisposable
         GScraperGuards.ArgumentInRange(query.Length, MaxQueryLength, nameof(query), $"The query cannot be larger than {MaxQueryLength}.");
 
         string token = await GetTokenAsync(query).ConfigureAwait(false);
-        var uri = new Uri($"i.js{BuildImageQuery(token, query, safeSearch, time, size, color, type, layout, license, region)}", UriKind.Relative);
+        var uri = new Uri(BuildImageQuery(token, query, safeSearch, time, size, color, type, layout, license, region), UriKind.Relative);
 
         var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
 
@@ -126,7 +128,7 @@ public class DuckDuckGoScraper : IDisposable
     private static string BuildImageQuery(string token, string query, SafeSearchLevel safeSearch, DuckDuckGoImageTime time, DuckDuckGoImageSize size,
         DuckDuckGoImageColor color, DuckDuckGoImageType type, DuckDuckGoImageLayout layout, DuckDuckGoImageLicense license, string region)
     {
-        string url = $"?l={region}" +
+        string url = $"i.js?l={region}" +
                      "&o=json" +
                      $"&q={Uri.EscapeDataString(query)}" +
                      $"&vqd={token}" +
