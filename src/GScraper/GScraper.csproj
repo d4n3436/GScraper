@@ -11,7 +11,8 @@
     <PackageProjectUrl>https://github.com/d4n3436/GScraper</PackageProjectUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+	<IsTrimmable>true</IsTrimmable>
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageTags>gscraper;scraping;web-scraping;google;google-images;duckduckgo;brave</PackageTags>
     <Description>A collection of search engine image scrapers (Google Images, DuckDuckGo and Brave).</Description>

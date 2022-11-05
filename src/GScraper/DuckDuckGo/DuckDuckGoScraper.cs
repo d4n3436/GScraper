@@ -101,28 +101,12 @@ public class DuckDuckGoScraper : IDisposable
         string token = await GetTokenAsync(query).ConfigureAwait(false);
         var uri = new Uri(BuildImageQuery(token, query, safeSearch, time, size, color, type, layout, license, region), UriKind.Relative);
 
-        var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
+        using var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
 
-        var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
+        using var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
         var results = document.RootElement.GetProperty("results");
 
-        return EnumerateResults(results);
-    }
-
-    private static IEnumerable<DuckDuckGoImageResult> EnumerateResults(JsonElement results)
-    {
-        foreach (var result in results.EnumerateArray())
-        {
-            string url = result.GetProperty("image").GetString() ?? string.Empty;
-            string title = result.GetProperty("title").GetString() ?? string.Empty;
-            int width = result.GetProperty("width").GetInt32();
-            int height = result.GetProperty("height").GetInt32();
-            string sourceUrl = result.GetProperty("url").GetString() ?? string.Empty;
-            string thumbnailUrl = result.GetProperty("thumbnail").GetString() ?? string.Empty;
-            string source = result.GetProperty("source").GetString() ?? string.Empty;
-
-            yield return new DuckDuckGoImageResult(url, title, width, height, sourceUrl, thumbnailUrl, source);
-        }
+        return Array.AsReadOnly(results.Deserialize(DuckDuckGoImageResultModelContext.Default.DuckDuckGoImageResultModelArray)!);
     }
 
     private static string BuildImageQuery(string token, string query, SafeSearchLevel safeSearch, DuckDuckGoImageTime time, DuckDuckGoImageSize size,
