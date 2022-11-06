@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Drawing;
+using System.Text.Json.Serialization;
 
 namespace GScraper.Brave;
 
@@ -9,26 +11,26 @@ namespace GScraper.Brave;
 [DebuggerDisplay("Title: {Title}, Url: {Url}")]
 public class BraveImageResult : IImageResult
 {
-    internal BraveImageResult(string url, string title, int width, int height, string sourceUrl,
-        DateTimeOffset pageAge, string source, string thumbnailUrl, string resizedUrl, string format)
+    internal BraveImageResult(DateTimeOffset pageAge, BraveImageProperties properties, string source, BraveThumbnail thumbnail, string title, string pageUrl)
     {
-        Url = url;
+        Url = properties.Url;
         Title = title;
-        Width = width;
-        Height = height;
-        SourceUrl = sourceUrl;
+        Width = properties.Width;
+        Height = properties.Height;
+        Color = thumbnail.BgColor;
+        SourceUrl = pageUrl;
         PageAge = pageAge;
         Source = source;
-        ThumbnailUrl = thumbnailUrl;
-        ResizedUrl = resizedUrl;
-        Format = format;
+        ThumbnailUrl = thumbnail.Src;
+        ResizedUrl = properties.Resized;
+        Format = properties.Format;
     }
-
 
     /// <inheritdoc/>
     public string Url { get; }
 
     /// <inheritdoc/>
+    [JsonPropertyName("title")]
     public string Title { get; }
 
     /// <inheritdoc/>
@@ -38,6 +40,12 @@ public class BraveImageResult : IImageResult
     public int Height { get; }
 
     /// <summary>
+    /// Gets the background color of this result.
+    /// </summary>
+    [JsonConverter(typeof(BraveColorConverter))]
+    public Color Color { get; }
+
+    /// <summary>
     /// Gets a URL pointing to the webpage hosting the image.
     /// </summary>
     public string SourceUrl { get; }
@@ -45,11 +53,13 @@ public class BraveImageResult : IImageResult
     /// <summary>
     /// Gets the page age.
     /// </summary>
+    [JsonPropertyName("page_age")]
     public DateTimeOffset PageAge { get; }
 
     /// <summary>
     /// Gets the name or the root URL of the website this image comes from.
     /// </summary>
+    [JsonPropertyName("source")]
     public string Source { get; }
 
     /// <summary>

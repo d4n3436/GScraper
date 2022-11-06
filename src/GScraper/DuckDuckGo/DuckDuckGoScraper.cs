@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace GScraper.DuckDuckGo;
 
+// TODO: Add support for cancellation tokens and regular search method
+
 /// <summary>
 /// Represents a DuckDuckGo scraper.
 /// </summary>
@@ -103,10 +105,9 @@ public class DuckDuckGoScraper : IDisposable
 
         using var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
 
-        using var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
-        var results = document.RootElement.GetProperty("results");
+        var response = (await JsonSerializer.DeserializeAsync(stream, DuckDuckGoImageSearchResponseContext.Default.DuckDuckGoImageSearchResponse).ConfigureAwait(false))!;
 
-        return Array.AsReadOnly(results.Deserialize(DuckDuckGoImageResultModelContext.Default.DuckDuckGoImageResultModelArray)!);
+        return Array.AsReadOnly(response.Results);
     }
 
     private static string BuildImageQuery(string token, string query, SafeSearchLevel safeSearch, DuckDuckGoImageTime time, DuckDuckGoImageSize size,

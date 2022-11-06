@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace GScraper.Brave;
 
+// TODO: Add support for cancellation tokens and regular search method
+
 /// <summary>
 /// Represents a Brave Search scraper.
 /// </summary>
@@ -85,12 +87,11 @@ public class BraveScraper : IDisposable
 
         var uri = new Uri(BuildImageQuery(query, safeSearch, country, size, type, layout, color, license), UriKind.Relative);
 
-        var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
+        using var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
 
-        var document = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
-        var results = document.RootElement.GetProperty("results");
+        var response = (await JsonSerializer.DeserializeAsync(stream, BraveImageSearchResponseContext.Default.BraveImageSearchResponse).ConfigureAwait(false))!;
 
-        return EnumerateResults(results);
+        return Array.AsReadOnly(response.Results);
     }
 
     private static string BuildImageQuery(string query, SafeSearchLevel safeSearch, string? country, BraveImageSize size, BraveImageType type,
@@ -98,7 +99,6 @@ public class BraveScraper : IDisposable
     {
         string url = $"images?q={Uri.EscapeDataString(query)}";
 
-        
         if (safeSearch != SafeSearchLevel.Moderate)
             url += $"&safesearch={safeSearch.ToString().ToLowerInvariant()}";
 
@@ -121,26 +121,6 @@ public class BraveScraper : IDisposable
             url += $"&license={license}";
 
         return url;
-    }
-
-    private static IEnumerable<BraveImageResult> EnumerateResults(JsonElement results)
-    {
-        foreach (var result in results.EnumerateArray())
-        {
-            var properties = result.GetProperty("properties");
-            string url = properties.GetProperty("url").GetString() ?? string.Empty;
-            string title = result.GetProperty("title").GetString() ?? string.Empty;
-            int width = properties.GetProperty("width").GetInt32();
-            int height = properties.GetProperty("height").GetInt32();
-            string sourceUrl = result.GetProperty("url").GetString() ?? string.Empty;
-            var pageAge = result.GetProperty("page_age").GetDateTimeOffset();
-            string source = result.GetProperty("source").GetString() ?? string.Empty;
-            string thumbnailUrl = result.GetProperty("thumbnail").GetProperty("src").GetString() ?? string.Empty;
-            string resizedUrl = properties.GetProperty("resized").GetString() ?? string.Empty;
-            string format = properties.GetProperty("format").GetString() ?? string.Empty;
-
-            yield return new BraveImageResult(url, title, width, height, sourceUrl, pageAge, source, thumbnailUrl, resizedUrl, format);
-        }
     }
 
     /// <inheritdoc />

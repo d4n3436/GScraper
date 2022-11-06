@@ -1,7 +1,9 @@
-﻿using System.Diagnostics;
+﻿using GScraper.Google;
+using System.Diagnostics;
 using System.Drawing;
+using System.Text.Json.Serialization;
 
-namespace GScraper;
+namespace GScraper; // TODO: Fix namespace
 
 /// <summary>
 /// Represents an image result from Google Images.
@@ -9,17 +11,16 @@ namespace GScraper;
 [DebuggerDisplay("Title: {Title}, Url: {Url}")]
 public class GoogleImageResult : IImageResult
 {
-    internal GoogleImageResult(string url, string title, int width, int height,
-        Color? color, string displayUrl, string sourceUrl, string thumbnailUrl)
+    internal GoogleImageResult(Color? color, GoogleOriginalImage originalImage, GoogleInternalImageResult result, GoogleImageThumbnail thumbnail)
     {
-        Url = url;
-        Title = title;
-        Width = width;
-        Height = height;
+        Url = originalImage.Url;
+        Title = result.PageTitle;
+        Width = originalImage.Width;
+        Height = originalImage.Height;
         Color = color;
-        DisplayUrl = displayUrl;
-        SourceUrl = sourceUrl;
-        ThumbnailUrl = thumbnailUrl;
+        DisplayUrl = result.ImageSourceUrl;
+        SourceUrl = result.ReferrerUrl;
+        ThumbnailUrl = thumbnail.Url;
     }
 
     /// <inheritdoc/>
@@ -37,6 +38,8 @@ public class GoogleImageResult : IImageResult
     /// <summary>
     /// Gets the background color of this result.
     /// </summary>
+    [JsonConverter(typeof(GoogleColorConverter))]
+    [JsonPropertyName("background_color")]
     public Color? Color { get; }
 
     /// <summary>

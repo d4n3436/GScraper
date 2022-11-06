@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace GScraper.Google;
+
+// TODO: Add support for cancellation tokens and regular search method
 
 /// <summary>
 /// Represents a Google Search scraper.
@@ -75,92 +76,22 @@ public class GoogleScraper : IDisposable
     /// <param name="time">The image time.</param>
     /// <param name="license">The image license. <see cref="GoogleImageLicenses"/> contains the licenses that can be used here.</param>
     /// <param name="language">The language code to use. <see cref="GoogleLanguages"/> contains the language codes that can be used here.</param>
-    /// <returns>A task representing the asynchronous operation. The result contains an <see cref="IEnumerable{T}"/> of <see cref="GoogleImageResult"/>.</returns>
+    /// <returns>A task representing the asynchronous operation. The result contains an <see cref="IEnumerable{T}"/> of <see cref="GScraper.GoogleImageResult"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="query"/> is null or empty.</exception>
     /// <exception cref="GScraperException">An error occurred during the scraping process.</exception>
     public async Task<IEnumerable<GoogleImageResult>> GetImagesAsync(string query, SafeSearchLevel safeSearch = SafeSearchLevel.Off, GoogleImageSize size = GoogleImageSize.Any,
         string? color = null, GoogleImageType type = GoogleImageType.Any, GoogleImageTime time = GoogleImageTime.Any,
         string? license = null, string? language = null)
     {
+        // TODO: Use pagination
         GScraperGuards.NotNull(query, nameof(query));
 
         var uri = new Uri(BuildImageQuery(query, safeSearch, size, color, type, time, license, language), UriKind.Relative);
         byte[] bytes = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
 
-        using var document = JsonDocument.Parse(bytes.AsMemory(5, bytes.Length - 5));
+        var images = JsonSerializer.Deserialize(bytes.AsSpan(5, bytes.Length - 5), GoogleImageSearchResponseContext.Default.GoogleImageSearchResponse)!.Ischj.Metadata;
 
-        bool any = document
-            .RootElement
-            .GetProperty("ischj")
-            .TryGetProperty("metadata", out var rawResults);
-
-        if (!any)
-        {
-            return Array.Empty<GoogleImageResult>();
-        }
-
-        int length = rawResults.GetArrayLength();
-        var results = new GoogleImageResult[length];
-
-        for (int i = 0; i < length; i++)
-        {
-            results[i] = GetImageResult(rawResults[i]);
-        }
-
-        return Array.AsReadOnly(results);
-    }
-
-    private static GoogleImageResult GetImageResult(in JsonElement element)
-    {
-        var result = element.GetProperty("result");
-        var originalImage = element.GetProperty("original_image");
-
-        var color = GetColor(element.GetProperty("background_color").GetString().AsSpan());
-        int height = originalImage.GetProperty("height").GetInt32();
-        string url = originalImage.GetProperty("url").GetString() ?? throw new GScraperException("Unable to get the URL of the image result.", "Google");
-        int width = originalImage.GetProperty("width").GetInt32();
-        string sourceUrl = result.GetProperty("referrer_url").GetString() ?? throw new GScraperException("Unable to get the source URL of the image result.", "Google");
-        string displayUrl = result.GetProperty("image_source_url").GetString() ?? throw new GScraperException("Unable to get the display URL of the image result.", "Google");
-        string title = result.GetProperty("page_title").GetString() ?? throw new GScraperException("Unable to get the title of the image result.", "Google");
-        string thumbnailUrl = element.GetProperty("thumbnail").GetProperty("url").GetString() ?? throw new GScraperException("Unable to get the thumbnail URL of the image result.", "Google");
-
-        return new GoogleImageResult(url, title, width, height, color, displayUrl, sourceUrl, thumbnailUrl);
-    }
-
-    private static Color? GetColor(ReadOnlySpan<char> rgb)
-    {
-        const string start = "rgb(";
-
-        if (!rgb.StartsWith(start.AsSpan())) return default;
-
-        rgb = rgb.Slice(start.Length);
-
-        // R
-        int index = rgb.IndexOf(',');
-        if (index == -1 || !TryParseInt(rgb.Slice(0, index), out int r)) return default;
-
-        rgb = rgb.Slice(index + 1);
-
-        // G
-        index = rgb.IndexOf(',');
-        if (index == -1 || !TryParseInt(rgb.Slice(0, index), out int g)) return default;
-
-        rgb = rgb.Slice(index + 1);
-
-        // B
-        index = rgb.IndexOf(')');
-        if (index == -1 || !TryParseInt(rgb.Slice(0, index), out int b)) return default;
-
-        return Color.FromArgb(r, g, b);
-    }
-
-    private static bool TryParseInt(ReadOnlySpan<char> s, out int result)
-    {
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP2_1_OR_GREATER
-        return int.TryParse(s, out result);
-#else
-        return int.TryParse(s.ToString(), out result);
-#endif
+        return Array.AsReadOnly(images ?? Array.Empty<GoogleImageResultModel>());
     }
 
     private static string BuildImageQuery(string query, SafeSearchLevel safeSearch, GoogleImageSize size, string? color,
