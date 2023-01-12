@@ -12,7 +12,7 @@ internal class BraveColorConverter : JsonConverter<Color>
     /// <inheritdoc />
     public override Color Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (!Utf8Parser.TryParse(reader.ValueSpan.Slice(1), out int rgb, out _, 'X'))
+        if (!Utf8Parser.TryParse(reader.ValueSpan[1..], out int rgb, out _, 'X'))
         {
             throw new FormatException("Unable to parse hex value.");
         }
@@ -26,7 +26,7 @@ internal class BraveColorConverter : JsonConverter<Color>
         Span<byte> hex = stackalloc byte[7];
         hex[0] = (byte)'#';
 
-        if (!Utf8Formatter.TryFormat(value.ToArgb() & 0x00FFFFFF, hex.Slice(1), out _, new StandardFormat('X', 6)))
+        if (!Utf8Formatter.TryFormat(value.ToArgb() & 0x00FFFFFF, hex[1..], out _, new StandardFormat('X', 6)))
         {
             throw new FormatException("Unable to format the RGB color as an hex string.");
         }

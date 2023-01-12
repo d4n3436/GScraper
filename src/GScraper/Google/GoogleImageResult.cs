@@ -8,7 +8,7 @@ namespace GScraper; // TODO: Fix namespace
 /// <summary>
 /// Represents an image result from Google Images.
 /// </summary>
-[DebuggerDisplay("Title: {Title}, Url: {Url}")]
+[DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class GoogleImageResult : IImageResult
 {
     internal GoogleImageResult(Color? color, GoogleOriginalImage originalImage, GoogleInternalImageResult result, GoogleImageThumbnail thumbnail)

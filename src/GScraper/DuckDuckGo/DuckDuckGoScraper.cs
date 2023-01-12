@@ -24,7 +24,7 @@ public class DuckDuckGoScraper : IDisposable
     /// </summary>
     public const int MaxQueryLength = 500;
 
-    private static ReadOnlySpan<byte> TokenStart => new[] { (byte)'v', (byte)'q', (byte)'d', (byte)'=', (byte)'\'' };
+    private static ReadOnlySpan<byte> TokenStart => "vqd=\'"u8;
 
     private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
     private static  readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
@@ -145,7 +145,7 @@ public class DuckDuckGoScraper : IDisposable
             throw new GScraperException("Failed to get the DuckDuckGo token.", "DuckDuckGo");
         }
 
-        var sliced = rawHtml.Slice(startIndex + TokenStart.Length);
+        var sliced = rawHtml[(startIndex + TokenStart.Length)..];
         int endIndex = sliced.IndexOf((byte)'\'');
 
         if (endIndex == -1)
@@ -154,9 +154,9 @@ public class DuckDuckGoScraper : IDisposable
         }
 
 #if NETSTANDARD2_1_OR_GREATER
-        return Encoding.UTF8.GetString(sliced.Slice(0, endIndex));
+        return Encoding.UTF8.GetString(sliced[..endIndex]);
 #else
-        return Encoding.UTF8.GetString(sliced.Slice(0, endIndex).ToArray());
+        return Encoding.UTF8.GetString(sliced[..endIndex].ToArray());
 #endif
     }
 

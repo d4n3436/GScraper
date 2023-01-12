@@ -6,7 +6,7 @@ namespace GScraper.DuckDuckGo;
 /// <summary>
 /// Represents an image result from DuckDuckGo.
 /// </summary>
-[DebuggerDisplay("Title: {Title}, Url: {Url}")]
+[DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class DuckDuckGoImageResult : IImageResult
 {
     internal DuckDuckGoImageResult(string url, string title, int width,

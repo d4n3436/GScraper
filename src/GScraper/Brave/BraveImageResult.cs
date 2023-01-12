@@ -8,7 +8,7 @@ namespace GScraper.Brave;
 /// <summary>
 /// Represents an image result from Brave.
 /// </summary>
-[DebuggerDisplay("Title: {Title}, Url: {Url}")]
+[DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class BraveImageResult : IImageResult
 {
     internal BraveImageResult(DateTimeOffset pageAge, BraveImageProperties properties, string source, BraveThumbnail thumbnail, string title, string pageUrl)
