@@ -11,7 +11,7 @@ namespace GScraper.Brave;
 [DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class BraveImageResult : IImageResult
 {
-    internal BraveImageResult(DateTimeOffset pageAge, BraveImageProperties properties, string source, BraveThumbnail thumbnail, string title, string pageUrl)
+    internal BraveImageResult(DateTimeOffset? pageAge, BraveImageProperties properties, string source, BraveThumbnail thumbnail, string title, string pageUrl)
     {
         Url = properties.Url;
         Title = title;
@@ -54,7 +54,7 @@ public class BraveImageResult : IImageResult
     /// Gets the page age.
     /// </summary>
     [JsonPropertyName("page_age")]
-    public DateTimeOffset PageAge { get; }
+    public DateTimeOffset? PageAge { get; }
 
     /// <summary>
     /// Gets the name or the root URL of the website this image comes from.

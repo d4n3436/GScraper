@@ -14,7 +14,8 @@ internal class BraveImageSearchResponse
 internal class BraveImageResultModel : BraveImageResult
 {
     [JsonConstructor]
-    public BraveImageResultModel(DateTimeOffset pageAge, BraveImageProperties properties, string source, BraveThumbnail thumbnail, string title, string pageUrl)
+    public BraveImageResultModel(DateTimeOffset? pageAge, BraveImageProperties properties, string source,
+        BraveThumbnail thumbnail, string title, string pageUrl)
         : base(pageAge, properties, source, thumbnail, title, pageUrl)
     {
         PageUrl = null!;
