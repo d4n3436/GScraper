@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json.Serialization;
 
@@ -13,7 +14,7 @@ internal class GoogleImageSearchResponse
 internal class Ischj
 {
     [JsonPropertyName("metadata")]
-    public GoogleImageResultModel[]? Metadata { get; set; }
+    public List<GoogleImageResultModel>? Metadata { get; set; }
 }
 
 internal class GoogleImageResultModel : GoogleImageResult

@@ -90,8 +90,9 @@ public class GoogleScraper : IDisposable
         byte[] bytes = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
 
         var images = JsonSerializer.Deserialize(bytes.AsSpan(5, bytes.Length - 5), GoogleImageSearchResponseContext.Default.GoogleImageSearchResponse)!.Ischj.Metadata;
+        images?.RemoveAll(static x => !x.Url.StartsWith("http"));
 
-        return Array.AsReadOnly(images ?? Array.Empty<GoogleImageResultModel>());
+        return images is null ? Array.Empty<GoogleImageResultModel>() : images.AsReadOnly();
     }
 
     private static string BuildImageQuery(string query, SafeSearchLevel safeSearch, GoogleImageSize size, string? color,
