@@ -67,7 +67,7 @@ public class BraveScraper : IDisposable
     /// <summary>
     /// Gets images from Brave Search.
     /// </summary>
-    /// <remarks>This method returns at most 150 image results (unless Brave changes something in their API).</remarks>
+    /// <remarks>This method returns at most 150 image results.</remarks>
     /// <param name="query">The search query.</param>
     /// <param name="safeSearch">The safe search level.</param>
     /// <param name="country">The country. <see cref="BraveCountries"/> contains the countries that can be used here.</param>
@@ -79,6 +79,7 @@ public class BraveScraper : IDisposable
     /// <returns>A task representing the asynchronous operation. The result contains an <see cref="IEnumerable{T}"/> of <see cref="BraveImageResult"/>.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="query"/> is null or empty.</exception>
     /// <exception cref="GScraperException">An error occurred during the scraping process.</exception>
+    [Obsolete("Brave removed its image search API (which called Bing's API) and now returns a 404 page.")]
     public async Task<IEnumerable<BraveImageResult>> GetImagesAsync(string query, SafeSearchLevel safeSearch = SafeSearchLevel.Moderate,
         string? country = null, BraveImageSize size = BraveImageSize.All, BraveImageType type = BraveImageType.All,
         BraveImageLayout layout = BraveImageLayout.All, BraveImageColor color = BraveImageColor.All, BraveImageLicense license = BraveImageLicense.All)
