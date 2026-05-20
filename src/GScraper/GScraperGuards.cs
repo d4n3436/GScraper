@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace GScraper;
 
 internal static class GScraperGuards
 {
-    public static void NotNull<T>(T? obj, [CallerArgumentExpression(nameof(obj))] string? parameterName = null) where T : class
+    public static void NotNull<T>([NotNull] T? obj, [CallerArgumentExpression(nameof(obj))] string? parameterName = null) where T : class
     {
         if (obj is null)
         {
