@@ -40,12 +40,14 @@ internal static class Program
                 continue;
             }
 
+            var options = new JsonSerializerOptions { WriteIndented = true };
+
             bool enumerateAll = false;
             bool stop = false;
             foreach (var image in images)
             {
                 Console.WriteLine();
-                Console.WriteLine(JsonSerializer.Serialize(image, image.GetType(), new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine(JsonSerializer.Serialize(image, image.GetType(), options));
                 Console.WriteLine();
 
                 if (!enumerateAll)
@@ -62,9 +64,6 @@ internal static class Program
 
                         case ConsoleKey.S:
                             stop = true;
-                            break;
-
-                        default:
                             break;
                     }
                 }

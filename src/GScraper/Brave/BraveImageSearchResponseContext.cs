@@ -3,6 +3,4 @@
 namespace GScraper.Brave;
 
 [JsonSerializable(typeof(BraveImageSearchResponse))]
-internal partial class BraveImageSearchResponseContext : JsonSerializerContext
-{
-}
+internal partial class BraveImageSearchResponseContext : JsonSerializerContext;

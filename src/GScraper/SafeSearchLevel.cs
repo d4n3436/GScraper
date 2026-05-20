@@ -1,8 +1,11 @@
-﻿namespace GScraper;
+﻿using JetBrains.Annotations;
+
+namespace GScraper;
 
 /// <summary>
 /// Specifies the Safe Search levels.
 /// </summary>
+[PublicAPI]
 public enum SafeSearchLevel
 {
     /// <summary>

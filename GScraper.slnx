@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="examples/GScraperExample/GScraperExample.csproj" />
+  <Project Path="src/GScraper/GScraper.csproj" />
+</Solution>

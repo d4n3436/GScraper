@@ -1,4 +1,5 @@
 ﻿using GScraper.Google;
+using JetBrains.Annotations;
 using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json.Serialization;
@@ -8,6 +9,7 @@ namespace GScraper; // TODO: Fix namespace
 /// <summary>
 /// Represents an image result from Google Images.
 /// </summary>
+[PublicAPI]
 [DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class GoogleImageResult : IImageResult
 {

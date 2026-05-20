@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace GScraper;
 
 internal static class GScraperGuards
 {
-    public static void NotNull<T>(T? obj, string parameterName) where T : class
+    public static void NotNull<T>(T? obj, [CallerArgumentExpression(nameof(obj))] string? parameterName = null) where T : class
     {
         if (obj is null)
         {
@@ -12,7 +13,7 @@ internal static class GScraperGuards
         }
     }
 
-    public static void NotNullOrEmpty(string? str, string parameterName)
+    public static void NotNullOrEmpty(string? str, [CallerArgumentExpression(nameof(str))] string? parameterName = null)
     {
         if (string.IsNullOrEmpty(str))
         {

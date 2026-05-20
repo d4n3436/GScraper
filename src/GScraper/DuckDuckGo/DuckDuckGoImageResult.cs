@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using JetBrains.Annotations;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace GScraper.DuckDuckGo;
@@ -6,6 +7,7 @@ namespace GScraper.DuckDuckGo;
 /// <summary>
 /// Represents an image result from DuckDuckGo.
 /// </summary>
+[PublicAPI]
 [DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class DuckDuckGoImageResult : IImageResult
 {

@@ -1,10 +1,12 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 
 namespace GScraper;
 
 /// <summary>
 /// The exception that is thrown during the scraping process.
 /// </summary>
+[PublicAPI]
 public class GScraperException : Exception
 {
     /// <summary>

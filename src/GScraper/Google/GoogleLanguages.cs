@@ -1,8 +1,11 @@
-﻿namespace GScraper.Google;
+﻿using JetBrains.Annotations;
+
+namespace GScraper.Google;
 
 /// <summary>
 /// Contains the languages used in Google Search/Images.
 /// </summary>
+[PublicAPI]
 public static class GoogleLanguages
 {
     /// <summary>

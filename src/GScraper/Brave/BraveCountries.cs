@@ -1,8 +1,11 @@
-﻿namespace GScraper.Brave;
+﻿using JetBrains.Annotations;
+
+namespace GScraper.Brave;
 
 /// <summary>
 /// Contains the possible countries in Brave search.
 /// </summary>
+[PublicAPI]
 public static class BraveCountries
 {
     /// <summary>
@@ -54,6 +57,7 @@ public static class BraveCountries
     /// France.
     /// </summary>
     public const string France = "fr";
+
     /// <summary>
     /// Germany.
     /// </summary>

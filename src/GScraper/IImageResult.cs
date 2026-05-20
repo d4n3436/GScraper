@@ -1,8 +1,11 @@
-﻿namespace GScraper;
+﻿using JetBrains.Annotations;
+
+namespace GScraper;
 
 /// <summary>
 /// Represents an image result.
 /// </summary>
+[PublicAPI]
 public interface IImageResult
 {
     /// <summary>

@@ -3,6 +3,4 @@
 namespace GScraper.DuckDuckGo;
 
 [JsonSerializable(typeof(DuckDuckGoImageSearchResponse))]
-internal partial class DuckDuckGoImageSearchResponseContext : JsonSerializerContext
-{
-}
+internal partial class DuckDuckGoImageSearchResponseContext : JsonSerializerContext;

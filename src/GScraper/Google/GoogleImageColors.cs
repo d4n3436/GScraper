@@ -1,8 +1,11 @@
-﻿namespace GScraper.Google;
+﻿using JetBrains.Annotations;
+
+namespace GScraper.Google;
 
 /// <summary>
 /// Contains the possible colors in Google Images.
 /// </summary>
+[PublicAPI]
 public static class GoogleImageColors
 {
     /// <summary>

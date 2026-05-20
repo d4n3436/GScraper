@@ -14,25 +14,25 @@ internal class GoogleColorConverter : JsonConverter<Color?>
     /// <inheritdoc />
     public override Color? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        if (!reader.ValueSpan.StartsWith(Start)) return default;
+        if (!reader.ValueSpan.StartsWith(Start)) return null;
 
         var rgb = reader.ValueSpan[Start.Length..];
 
         // R
         int index = rgb.IndexOf((byte)',');
-        if (index == -1 || !Utf8Parser.TryParse(rgb[..index], out int r, out _)) return default;
+        if (index == -1 || !Utf8Parser.TryParse(rgb[..index], out int r, out _)) return null;
 
         rgb = rgb[(index + 1)..];
 
         // G
         index = rgb.IndexOf((byte)',');
-        if (index == -1 || !Utf8Parser.TryParse(rgb[..index], out int g, out _)) return default;
+        if (index == -1 || !Utf8Parser.TryParse(rgb[..index], out int g, out _)) return null;
 
         rgb = rgb[(index + 1)..];
 
         // B
         index = rgb.IndexOf((byte)')');
-        if (index == -1 || !Utf8Parser.TryParse(rgb[..index], out int b, out _)) return default;
+        if (index == -1 || !Utf8Parser.TryParse(rgb[..index], out int b, out _)) return null;
 
         return Color.FromArgb(r, g, b);
     }

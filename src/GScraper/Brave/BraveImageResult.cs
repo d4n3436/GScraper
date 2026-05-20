@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json.Serialization;
@@ -8,6 +9,7 @@ namespace GScraper.Brave;
 /// <summary>
 /// Represents an image result from Brave.
 /// </summary>
+[PublicAPI]
 [DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class BraveImageResult : IImageResult
 {

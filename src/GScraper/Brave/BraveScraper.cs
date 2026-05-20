@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
@@ -11,6 +12,7 @@ namespace GScraper.Brave;
 /// <summary>
 /// Represents a Brave Search scraper.
 /// </summary>
+[PublicAPI]
 public class BraveScraper : IDisposable
 {
     /// <summary>
@@ -18,7 +20,7 @@ public class BraveScraper : IDisposable
     /// </summary>
     public const string DefaultApiEndpoint = "https://search.brave.com/api/";
 
-    private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
+    private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
     private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
 
     private readonly HttpClient _httpClient;
@@ -53,14 +55,14 @@ public class BraveScraper : IDisposable
 
     private void Init(HttpClient client, Uri apiEndpoint)
     {
-        GScraperGuards.NotNull(client, nameof(client));
-        GScraperGuards.NotNull(apiEndpoint, nameof(apiEndpoint));
+        GScraperGuards.NotNull(client);
+        GScraperGuards.NotNull(apiEndpoint);
 
         _httpClient.BaseAddress = apiEndpoint;
 
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(DefaultUserAgent);
         }
     }
 
@@ -84,7 +86,7 @@ public class BraveScraper : IDisposable
         string? country = null, BraveImageSize size = BraveImageSize.All, BraveImageType type = BraveImageType.All,
         BraveImageLayout layout = BraveImageLayout.All, BraveImageColor color = BraveImageColor.All, BraveImageLicense license = BraveImageLicense.All)
     {
-        GScraperGuards.NotNull(query, nameof(query));
+        GScraperGuards.NotNull(query);
 
         var uri = new Uri(BuildImageQuery(query, safeSearch, country, size, type, layout, color, license), UriKind.Relative);
 

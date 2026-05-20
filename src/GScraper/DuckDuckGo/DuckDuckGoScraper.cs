@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -12,6 +13,7 @@ namespace GScraper.DuckDuckGo;
 /// <summary>
 /// Represents a DuckDuckGo scraper.
 /// </summary>
+[PublicAPI]
 public class DuckDuckGoScraper : IDisposable
 {
     /// <summary>
@@ -61,8 +63,8 @@ public class DuckDuckGoScraper : IDisposable
 
     private void Init(HttpClient client, Uri apiEndpoint)
     {
-        GScraperGuards.NotNull(client, nameof(client));
-        GScraperGuards.NotNull(apiEndpoint, nameof(apiEndpoint));
+        GScraperGuards.NotNull(client);
+        GScraperGuards.NotNull(apiEndpoint);
 
         _httpClient.BaseAddress = apiEndpoint;
 
@@ -107,8 +109,8 @@ public class DuckDuckGoScraper : IDisposable
         DuckDuckGoImageType type = DuckDuckGoImageType.All, DuckDuckGoImageLayout layout = DuckDuckGoImageLayout.All, DuckDuckGoImageLicense license = DuckDuckGoImageLicense.All,
         string region = DuckDuckGoRegions.UsEnglish)
     {
-        GScraperGuards.NotNull(query, nameof(query));
-        GScraperGuards.NotNullOrEmpty(region, nameof(region));
+        GScraperGuards.NotNull(query);
+        GScraperGuards.NotNullOrEmpty(region);
         GScraperGuards.ArgumentInRange(query.Length, MaxQueryLength, nameof(query), $"The query cannot be larger than {MaxQueryLength}.");
 
         string token = await GetTokenAsync(query).ConfigureAwait(false);
@@ -199,7 +201,7 @@ public class DuckDuckGoScraper : IDisposable
             throw new GScraperException("Failed to get the DuckDuckGo token.", "DuckDuckGo");
         }
 
-#if NETSTANDARD2_1_OR_GREATER
+#if NETSTANDARD2_1_OR_GREATER || NET8_0_OR_GREATER
         return Encoding.UTF8.GetString(sliced[..endIndex]);
 #else
         return Encoding.UTF8.GetString(sliced[..endIndex].ToArray());

@@ -1,8 +1,11 @@
-﻿namespace GScraper.DuckDuckGo;
+﻿using JetBrains.Annotations;
+
+namespace GScraper.DuckDuckGo;
 
 /// <summary>
 /// Contains the possible regions in DuckDuckGo.
 /// </summary>
+[PublicAPI]
 public static class DuckDuckGoRegions
 {
     /// <summary>

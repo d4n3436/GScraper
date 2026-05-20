@@ -1,22 +1,28 @@
-﻿namespace GScraper.Brave;
+﻿using JetBrains.Annotations;
+
+namespace GScraper.Brave;
 
 /// <summary>
 /// Specifies the image layouts in Brave search.
 /// </summary>
+[PublicAPI]
 public enum BraveImageLayout
 {
     /// <summary>
     /// All layouts
     /// </summary>
     All,
+
     /// <summary>
     /// Square layout.
     /// </summary>
     Square,
+
     /// <summary>
     /// Tall layout.
     /// </summary>
     Tall,
+
     /// <summary>
     /// Wide layout.
     /// </summary>

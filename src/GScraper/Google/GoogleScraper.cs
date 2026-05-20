@@ -1,4 +1,5 @@
-﻿using System;
+﻿using JetBrains.Annotations;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
@@ -11,6 +12,7 @@ namespace GScraper.Google;
 /// <summary>
 /// Represents a Google Search scraper.
 /// </summary>
+[PublicAPI]
 public class GoogleScraper : IDisposable
 {
     /// <summary>
@@ -18,7 +20,7 @@ public class GoogleScraper : IDisposable
     /// </summary>
     public const string DefaultApiEndpoint = "https://www.google.com/search";
 
-    private const string _defaultUserAgent = "NSTN/3.62.475170463.release Dalvik/2.1.0 (Linux; U; Android 12) Mobile";
+    private const string DefaultUserAgent = "NSTN/3.62.475170463.release Dalvik/2.1.0 (Linux; U; Android 12) Mobile";
     private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
 
     private readonly HttpClient _httpClient;
@@ -53,14 +55,14 @@ public class GoogleScraper : IDisposable
 
     private void Init(HttpClient client, Uri apiEndpoint)
     {
-        GScraperGuards.NotNull(client, nameof(client));
-        GScraperGuards.NotNull(apiEndpoint, nameof(apiEndpoint));
+        GScraperGuards.NotNull(client);
+        GScraperGuards.NotNull(apiEndpoint);
 
         _httpClient.BaseAddress = apiEndpoint;
 
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
+            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(DefaultUserAgent);
         }
     }
 
@@ -84,13 +86,13 @@ public class GoogleScraper : IDisposable
         string? license = null, string? language = null)
     {
         // TODO: Use pagination
-        GScraperGuards.NotNull(query, nameof(query));
+        GScraperGuards.NotNull(query);
 
         var uri = new Uri(BuildImageQuery(query, safeSearch, size, color, type, time, license, language), UriKind.Relative);
         byte[] bytes = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
 
         var images = JsonSerializer.Deserialize(bytes.AsSpan(5, bytes.Length - 5), GoogleImageSearchResponseContext.Default.GoogleImageSearchResponse)!.Ischj.Metadata;
-        images?.RemoveAll(static x => !x.Url.StartsWith("http"));
+        images?.RemoveAll(static x => !x.Url.StartsWith("http", StringComparison.Ordinal));
 
         return images is null ? Array.Empty<GoogleImageResultModel>() : images.AsReadOnly();
     }
