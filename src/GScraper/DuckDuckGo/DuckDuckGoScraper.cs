@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
@@ -26,8 +26,8 @@ public class DuckDuckGoScraper : IDisposable
 
     private static ReadOnlySpan<byte> TokenStart => "vqd=\""u8;
 
-    private const string _defaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36";
-    private static  readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
+    private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+    private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
 
     private readonly HttpClient _httpClient;
     private bool _disposed;
@@ -63,15 +63,26 @@ public class DuckDuckGoScraper : IDisposable
     {
         GScraperGuards.NotNull(client, nameof(client));
         GScraperGuards.NotNull(apiEndpoint, nameof(apiEndpoint));
-        
+
         _httpClient.BaseAddress = apiEndpoint;
-        
-        if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
+
+        var headers = _httpClient.DefaultRequestHeaders;
+        if (headers.UserAgent.Count == 0)
         {
-            _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_defaultUserAgent);
+            headers.UserAgent.ParseAdd(DefaultUserAgent);
         }
 
-        _httpClient.DefaultRequestHeaders.Referrer ??= _httpClient.BaseAddress;
+        headers.Referrer ??= _httpClient.BaseAddress;
+
+        if (headers.Accept.Count == 0)
+        {
+            headers.Accept.ParseAdd("*/*");
+        }
+
+        if (headers.AcceptLanguage.Count == 0)
+        {
+            headers.AcceptLanguage.ParseAdd("en-US,en;q=0.5");
+        }
     }
 
     /// <summary>
@@ -103,8 +114,15 @@ public class DuckDuckGoScraper : IDisposable
         string token = await GetTokenAsync(query).ConfigureAwait(false);
         var uri = new Uri(BuildImageQuery(token, query, safeSearch, time, size, color, type, layout, license, region), UriKind.Relative);
 
-        using var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
+        using var imageRequest = new HttpRequestMessage(HttpMethod.Get, uri);
+        imageRequest.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "empty");
+        imageRequest.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "cors");
+        imageRequest.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
 
+        using var imageResponse = await _httpClient.SendAsync(imageRequest, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+        imageResponse.EnsureSuccessStatusCode();
+
+        using var stream = await imageResponse.Content.ReadAsStreamAsync().ConfigureAwait(false);
         var response = (await JsonSerializer.DeserializeAsync(stream, DuckDuckGoImageSearchResponseContext.Default.DuckDuckGoImageSearchResponse).ConfigureAwait(false))!;
 
         return Array.AsReadOnly(response.Results);
@@ -113,29 +131,57 @@ public class DuckDuckGoScraper : IDisposable
     private static string BuildImageQuery(string token, string query, SafeSearchLevel safeSearch, DuckDuckGoImageTime time, DuckDuckGoImageSize size,
         DuckDuckGoImageColor color, DuckDuckGoImageType type, DuckDuckGoImageLayout layout, DuckDuckGoImageLicense license, string region)
     {
-        string url = $"i.js?l={region}" +
-                     "&o=json" +
-                     $"&q={Uri.EscapeDataString(query)}" +
-                     $"&vqd={token}" +
-                     "&f=";
+        string[] regionParts = region.Split('-');
+        string ct = regionParts.Length >= 2 ? regionParts[^1].ToUpperInvariant() : "EN";
+        if (ct == "WT") ct = "EN";
 
-        url += time == DuckDuckGoImageTime.Any ? ',' : $"time:{time},";
-        url += size == DuckDuckGoImageSize.All ? ',' : $"size:{size},";
-        url += color == DuckDuckGoImageColor.All ? ',' : $"color:{color.ToString().ToLowerInvariant()},";
-        url += type == DuckDuckGoImageType.All ? ',' : $"type:{type},";
-        url += layout == DuckDuckGoImageLayout.All ? ',' : $"layout:{layout},";
-        url += license == DuckDuckGoImageLicense.All ? "" : $"license:{license}";
-        url += $"&p={(safeSearch == SafeSearchLevel.Off ? "-1" : "1")}";
+        string url = "i.js?" +
+                     "o=json" +
+                     $"&q={Uri.EscapeDataString(query)}" +
+                     "&u=bing" +
+                     $"&l={region}" +
+                     "&bpia=1" +
+                     $"&vqd={token}" +
+                     "&a=h_" +
+                     $"&ct={ct}";
+
+        string filters = BuildFilters(time, size, color, type, layout, license);
+        if (filters.Length > 0)
+            url += $"&f={filters}";
+
+        if (safeSearch != SafeSearchLevel.Moderate)
+            url += $"&p={(safeSearch == SafeSearchLevel.Off ? "-2" : "1")}";
 
         return url;
     }
-    
+
+    private static string BuildFilters(DuckDuckGoImageTime time, DuckDuckGoImageSize size, DuckDuckGoImageColor color,
+        DuckDuckGoImageType type, DuckDuckGoImageLayout layout, DuckDuckGoImageLicense license)
+    {
+        string filter = "";
+        if (time != DuckDuckGoImageTime.Any) filter += $"time:{time},";
+        if (size != DuckDuckGoImageSize.All) filter += $"size:{size},";
+        if (color != DuckDuckGoImageColor.All) filter += $"color:{color.ToString().ToLowerInvariant()},";
+        if (type != DuckDuckGoImageType.All) filter += $"type:{type},";
+        if (layout != DuckDuckGoImageLayout.All) filter += $"layout:{layout},";
+        if (license != DuckDuckGoImageLicense.All) filter += $"license:{license},";
+        return filter.TrimEnd(',');
+    }
+
     private async Task<string> GetTokenAsync(string query)
     {
-        byte[] bytes = await _httpClient.GetByteArrayAsync(new Uri($"?q={Uri.EscapeDataString(query)}", UriKind.Relative)).ConfigureAwait(false);
+        using var request = new HttpRequestMessage(HttpMethod.Get, new Uri($"?q={Uri.EscapeDataString(query)}&iar=images&t=h_", UriKind.Relative));
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "document");
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "navigate");
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "same-origin");
+        request.Headers.TryAddWithoutValidation("Sec-Fetch-User", "?1");
+
+        using var response = await _httpClient.SendAsync(request, HttpCompletionOption.ResponseContentRead).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        byte[] bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
         return GetToken(bytes);
     }
-    
+
     private static string GetToken(ReadOnlySpan<byte> rawHtml)
     {
         int startIndex = rawHtml.IndexOf(TokenStart);
