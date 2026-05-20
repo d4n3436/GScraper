@@ -1,4 +1,4 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -39,7 +39,7 @@ public class GoogleScraper : IDisposable
     /// </summary>
     public GoogleScraper(HttpClient client)
     {
-        GScraperGuards.NotNull(_httpClient);
+        GScraperGuards.NotNull(client);
 
         _httpClient = client;
         _httpClient.BaseAddress = _defaultBaseAddress;

@@ -47,7 +47,7 @@ public class DuckDuckGoScraper : IDisposable
     /// </summary>
     public DuckDuckGoScraper(HttpClient client)
     {
-        GScraperGuards.NotNull(_httpClient);
+        GScraperGuards.NotNull(client);
 
         _httpClient = client;
         _httpClient.BaseAddress = _defaultBaseAddress;
