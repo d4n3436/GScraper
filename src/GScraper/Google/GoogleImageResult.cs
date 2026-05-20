@@ -1,10 +1,9 @@
-﻿using GScraper.Google;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using System.Diagnostics;
 using System.Drawing;
 using System.Text.Json.Serialization;
 
-namespace GScraper; // TODO: Fix namespace
+namespace GScraper.Google;
 
 /// <summary>
 /// Represents an image result from Google Images.
