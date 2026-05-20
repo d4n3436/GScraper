@@ -47,26 +47,10 @@ public class DuckDuckGoScraper : IDisposable
     /// </summary>
     public DuckDuckGoScraper(HttpClient client)
     {
+        GScraperGuards.NotNull(_httpClient);
+
         _httpClient = client;
-        Init(_httpClient, _defaultBaseAddress);
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DuckDuckGoScraper"/> class using the provided <see cref="HttpClient"/> and API endpoint.
-    /// </summary>
-    [Obsolete("This constructor is deprecated and it will be removed in a future version. Use DuckDuckGoScraper(HttpClient) instead.")]
-    public DuckDuckGoScraper(HttpClient client, string apiEndpoint)
-    {
-        _httpClient = client;
-        Init(_httpClient, new Uri(apiEndpoint));
-    }
-
-    private void Init(HttpClient client, Uri apiEndpoint)
-    {
-        GScraperGuards.NotNull(client);
-        GScraperGuards.NotNull(apiEndpoint);
-
-        _httpClient.BaseAddress = apiEndpoint;
+        _httpClient.BaseAddress = _defaultBaseAddress;
 
         var headers = _httpClient.DefaultRequestHeaders;
         if (headers.UserAgent.Count == 0)
