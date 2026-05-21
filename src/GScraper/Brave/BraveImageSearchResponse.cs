@@ -1,70 +1,60 @@
-﻿using System;
-using System.Diagnostics;
-using System.Drawing;
 using System.Text.Json.Serialization;
 
 namespace GScraper.Brave;
 
-internal class BraveImageSearchResponse
+internal sealed class BravePageRoot
+{
+    [JsonPropertyName("body")]
+    public required BravePageBody Body { get; set; }
+}
+
+internal sealed class BravePageBody
+{
+    [JsonPropertyName("response")]
+    public required BravePageResponse Response { get; set; }
+}
+
+internal sealed class BravePageResponse
 {
     [JsonPropertyName("results")]
-    public BraveImageResultModel[] Results { get; set; } = null!;
+    public required BraveImageResultModel[] Results { get; set; }
 }
 
-internal class BraveImageResultModel : BraveImageResult
+internal sealed class BraveImageResultModel
 {
-    [JsonConstructor]
-    public BraveImageResultModel(DateTimeOffset? pageAge, BraveImageProperties properties, string source,
-        BraveThumbnail thumbnail, string title, string pageUrl)
-        : base(pageAge, properties, source, thumbnail, title, pageUrl)
-    {
-        PageUrl = null!;
-        Properties = null!;
-        Thumbnail = null!;
-    }
+    [JsonPropertyName("title")]
+    public string? Title { get; set; }
 
-    // This property should be deserialized directly into BraveImageResult.SourceUrl but it doesn't work,
-    // probably because it collides with BraveImageResult.Url
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     [JsonPropertyName("url")]
-    public string PageUrl { get; }
+    public string? Url { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    [JsonPropertyName("properties")]
-    public BraveImageProperties Properties { get; }
+    [JsonPropertyName("source")]
+    public string? Source { get; set; }
 
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     [JsonPropertyName("thumbnail")]
-    public BraveThumbnail Thumbnail { get; }
+    public BraveImageThumbnailModel? Thumbnail { get; set; }
+
+    [JsonPropertyName("properties")]
+    public BraveImagePropertiesModel? Properties { get; set; }
 }
 
-internal class BraveImageProperties
+internal sealed class BraveImageThumbnailModel
 {
-    [JsonPropertyName("format")]
-    public string Format { get; set; } = null!;
+    [JsonPropertyName("src")]
+    public string? Src { get; set; }
+}
 
-    [JsonPropertyName("height")]
-    public int Height { get; set; }
+internal sealed class BraveImagePropertiesModel
+{
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
 
     [JsonPropertyName("resized")]
-    public string Resized { get; set; } = null!;
-
-    [JsonPropertyName("url")]
-    public string Url { get; set; } = null!;
+    public string? Resized { get; set; }
 
     [JsonPropertyName("width")]
     public int Width { get; set; }
-}
 
-internal class BraveThumbnail
-{
-    [JsonPropertyName("bg_color")]
-    [JsonConverter(typeof(BraveColorConverter))]
-    public Color BgColor { get; set; }
-
-    [JsonPropertyName("src")]
-    public string Src { get; set; } = null!;
+    [JsonPropertyName("height")]
+    public int Height { get; set; }
 }

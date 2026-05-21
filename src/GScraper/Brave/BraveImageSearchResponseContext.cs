@@ -1,6 +1,6 @@
-﻿using System.Text.Json.Serialization;
+using System.Text.Json.Serialization;
 
 namespace GScraper.Brave;
 
-[JsonSerializable(typeof(BraveImageSearchResponse))]
+[JsonSerializable(typeof(BravePageRoot))]
 internal partial class BraveImageSearchResponseContext : JsonSerializerContext;

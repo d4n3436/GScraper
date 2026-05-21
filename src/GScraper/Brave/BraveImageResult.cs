@@ -1,8 +1,7 @@
-﻿using JetBrains.Annotations;
+using JetBrains.Annotations;
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Text.Json.Serialization;
 
 namespace GScraper.Brave;
 
@@ -13,26 +12,23 @@ namespace GScraper.Brave;
 [DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class BraveImageResult : IImageResult
 {
-    internal BraveImageResult(DateTimeOffset? pageAge, BraveImageProperties properties, string source, BraveThumbnail thumbnail, string title, string pageUrl)
+    internal BraveImageResult(string url, string title, int width, int height,
+        string sourceUrl, string source, string thumbnailUrl, string resizedUrl)
     {
-        Url = properties.Url;
+        Url = url;
         Title = title;
-        Width = properties.Width;
-        Height = properties.Height;
-        Color = thumbnail.BgColor;
-        SourceUrl = pageUrl;
-        PageAge = pageAge;
+        Width = width;
+        Height = height;
+        SourceUrl = sourceUrl;
         Source = source;
-        ThumbnailUrl = thumbnail.Src;
-        ResizedUrl = properties.Resized;
-        Format = properties.Format;
+        ThumbnailUrl = thumbnailUrl;
+        ResizedUrl = resizedUrl;
     }
 
     /// <inheritdoc/>
     public string Url { get; }
 
     /// <inheritdoc/>
-    [JsonPropertyName("title")]
     public string Title { get; }
 
     /// <inheritdoc/>
@@ -44,8 +40,8 @@ public class BraveImageResult : IImageResult
     /// <summary>
     /// Gets the background color of this result.
     /// </summary>
-    [JsonConverter(typeof(BraveColorConverter))]
-    public Color Color { get; }
+    [Obsolete("Brave no longer returns the background color of the image.")]
+    public Color Color { get; } = Color.Empty;
 
     /// <summary>
     /// Gets a URL pointing to the webpage hosting the image.
@@ -55,13 +51,12 @@ public class BraveImageResult : IImageResult
     /// <summary>
     /// Gets the page age.
     /// </summary>
-    [JsonPropertyName("page_age")]
+    [Obsolete("Brave no longer returns the page age.")]
     public DateTimeOffset? PageAge { get; }
 
     /// <summary>
     /// Gets the name or the root URL of the website this image comes from.
     /// </summary>
-    [JsonPropertyName("source")]
     public string Source { get; }
 
     /// <summary>
@@ -77,7 +72,8 @@ public class BraveImageResult : IImageResult
     /// <summary>
     /// Gets the format of the image.
     /// </summary>
-    public string Format { get; }
+    [Obsolete("Brave no longer returns the format of the image.")]
+    public string Format { get; } = string.Empty;
 
     /// <summary>
     /// Returns the URL of this result.

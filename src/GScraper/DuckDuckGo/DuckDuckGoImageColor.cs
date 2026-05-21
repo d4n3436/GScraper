@@ -3,7 +3,7 @@
 namespace GScraper.DuckDuckGo;
 
 /// <summary>
-/// Specifies the image colors in Brave search.
+/// Specifies the image colors in DuckDuckGo search.
 /// </summary>
 [PublicAPI]
 public enum DuckDuckGoImageColor
