@@ -22,7 +22,7 @@ public class GoogleScraper : IDisposable
 
     private const string DefaultUserAgent = "Opera/12.02 (Android 4.1; Linux; Opera Mobi/ADR-1111101157; U; en-US) Presto/2.9.201 Version/12.02";
     private const string ThumbnailEndpoint = "https://encrypted-tbn0.gstatic.com/images?q=tbn:";
-    private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint); 
+    private static readonly Uri DefaultBaseAddress = new(DefaultApiEndpoint); 
 
     private readonly HtmlParser _htmlParser = new();
     private readonly HttpClient _httpClient;
@@ -44,7 +44,7 @@ public class GoogleScraper : IDisposable
         GScraperGuards.NotNull(client);
 
         _httpClient = client;
-        _httpClient.BaseAddress = _defaultBaseAddress;
+        _httpClient.BaseAddress = DefaultBaseAddress;
 
         if (_httpClient.DefaultRequestHeaders.UserAgent.Count == 0)
         {

@@ -22,7 +22,7 @@ public class BraveScraper : IDisposable
     public const string DefaultApiEndpoint = "https://search.brave.com/";
 
     private const string DefaultUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
-    private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
+    private static readonly Uri DefaultBaseAddress = new(DefaultApiEndpoint);
 
     private readonly HttpClient _httpClient;
     private bool _disposed;
@@ -43,7 +43,7 @@ public class BraveScraper : IDisposable
         GScraperGuards.NotNull(client);
 
         _httpClient = client;
-        _httpClient.BaseAddress = _defaultBaseAddress;
+        _httpClient.BaseAddress = DefaultBaseAddress;
 
         var headers = _httpClient.DefaultRequestHeaders;
         if (headers.UserAgent.Count == 0)
