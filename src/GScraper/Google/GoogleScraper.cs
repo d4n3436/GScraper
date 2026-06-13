@@ -1,8 +1,8 @@
+using AngleSharp.Html.Parser;
 using JetBrains.Annotations;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace GScraper.Google;
@@ -20,9 +20,11 @@ public class GoogleScraper : IDisposable
     /// </summary>
     public const string DefaultApiEndpoint = "https://www.google.com/search";
 
-    private const string DefaultUserAgent = "NSTN/3.62.475170463.release Dalvik/2.1.0 (Linux; U; Android 12) Mobile";
-    private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint);
+    private const string DefaultUserAgent = "Opera/12.02 (Android 4.1; Linux; Opera Mobi/ADR-1111101157; U; en-US) Presto/2.9.201 Version/12.02";
+    private const string ThumbnailEndpoint = "https://encrypted-tbn0.gstatic.com/images?q=tbn:";
+    private static readonly Uri _defaultBaseAddress = new(DefaultApiEndpoint); 
 
+    private readonly HtmlParser _htmlParser = new();
     private readonly HttpClient _httpClient;
     private bool _disposed;
 
@@ -63,28 +65,57 @@ public class GoogleScraper : IDisposable
     /// <param name="license">The image license. <see cref="GoogleImageLicenses"/> contains the licenses that can be used here.</param>
     /// <param name="language">The language code to use. <see cref="GoogleLanguages"/> contains the language codes that can be used here.</param>
     /// <returns>A task representing the asynchronous operation. The result contains an <see cref="IEnumerable{T}"/> of <see cref="GoogleImageResult"/>.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="query"/> is null or empty.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="query"/> is <see langword="null"/> or empty.</exception>
     /// <exception cref="GScraperException">An error occurred during the scraping process.</exception>
     public async Task<IEnumerable<GoogleImageResult>> GetImagesAsync(string query, SafeSearchLevel safeSearch = SafeSearchLevel.Off, GoogleImageSize size = GoogleImageSize.Any,
         string? color = null, GoogleImageType type = GoogleImageType.Any, GoogleImageTime time = GoogleImageTime.Any,
         string? license = null, string? language = null)
     {
-        // TODO: Use pagination
         GScraperGuards.NotNull(query);
 
         var uri = new Uri(BuildImageQuery(query, safeSearch, size, color, type, time, license, language), UriKind.Relative);
-        byte[] bytes = await _httpClient.GetByteArrayAsync(uri).ConfigureAwait(false);
+        using var stream = await _httpClient.GetStreamAsync(uri).ConfigureAwait(false);
+        using var document = await _htmlParser.ParseDocumentAsync(stream).ConfigureAwait(false);
 
-        var images = JsonSerializer.Deserialize(bytes.AsSpan(5, bytes.Length - 5), GoogleImageSearchResponseContext.Default.GoogleImageSearchResponse)!.Ischj.Metadata;
-        images?.RemoveAll(static x => !x.Url.StartsWith("http", StringComparison.Ordinal));
+        var elements = document.GetElementsByClassName("isv-r");
+        var images = new List<GoogleImageResult>(elements.Length);
 
-        return images is null ? Array.Empty<GoogleImageResultModel>() : images.AsReadOnly();
+        foreach (var element in elements)
+        {
+            string? url = element.GetAttribute("data-ou");
+            if (url is null || !url.StartsWith("http", StringComparison.Ordinal))
+                continue;
+
+            int width = int.Parse(element.GetAttribute("data-ow")!);
+            int height = int.Parse(element.GetAttribute("data-oh")!);
+
+            string sourceUrl = element.GetAttribute("data-ru") ?? "";
+            string? thumbnailId = element.GetAttribute("data-tbnid");
+
+            images.Add(new GoogleImageResult(
+                url: url,
+                title: element.GetAttribute("data-pt") ?? "",
+                width: width,
+                height: height,
+                color: null,
+                displayUrl: Uri.TryCreate(sourceUrl, UriKind.Absolute, out var sourceUri) ? sourceUri.Host : "",
+                sourceUrl: sourceUrl,
+                thumbnailUrl: thumbnailId is null ? "" : $"{ThumbnailEndpoint}{thumbnailId}"));
+        }
+
+        // Google returns a page that requires JavaScript when it stops serving the legacy page to the user agent
+        if (images.Count == 0 && document.QuerySelector("meta[content*='/httpservice/retry/enablejs']") is not null)
+        {
+            throw new GScraperException("Failed to get the image results. Google returned a page that requires JavaScript.", "Google");
+        }
+
+        return images.AsReadOnly();
     }
 
     private static string BuildImageQuery(string query, SafeSearchLevel safeSearch, GoogleImageSize size, string? color,
         GoogleImageType type, GoogleImageTime time, string? license, string? language)
     {
-        string url = $"?q={Uri.EscapeDataString(query)}&tbm=isch&asearch=isch&async=_fmt:json,p:1&tbs=";
+        string url = $"?q={Uri.EscapeDataString(query)}&tbm=isch&ie=UTF-8&oe=UTF-8&tbs=";
 
         url += size == GoogleImageSize.Any ? ',' : $"isz:{(char)size},";
         url += string.IsNullOrEmpty(color) ? ',' : $"ic:{color},";
