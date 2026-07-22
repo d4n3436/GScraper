@@ -1,6 +1,7 @@
 ﻿using JetBrains.Annotations;
 using System.Diagnostics;
 using System.Drawing;
+using System.Text.Json.Serialization;
 
 namespace GScraper.Google;
 
@@ -11,17 +12,16 @@ namespace GScraper.Google;
 [DebuggerDisplay($"{nameof(Title)}: {{Title}}, {nameof(Url)}: {{Url}}")]
 public class GoogleImageResult : IImageResult
 {
-    internal GoogleImageResult(string url, string title, int width, int height,
-        Color? color, string displayUrl, string sourceUrl, string thumbnailUrl)
+    internal GoogleImageResult(Color? color, GoogleOriginalImage originalImage, GoogleInternalImageResult result, GoogleImageThumbnail thumbnail)
     {
-        Url = url;
-        Title = title;
-        Width = width;
-        Height = height;
+        Url = originalImage.Url;
+        Title = result.PageTitle;
+        Width = originalImage.Width;
+        Height = originalImage.Height;
         Color = color;
-        DisplayUrl = displayUrl;
-        SourceUrl = sourceUrl;
-        ThumbnailUrl = thumbnailUrl;
+        DisplayUrl = result.ImageSourceUrl;
+        SourceUrl = result.ReferrerUrl;
+        ThumbnailUrl = thumbnail.Url;
     }
 
     /// <inheritdoc/>
@@ -39,7 +39,8 @@ public class GoogleImageResult : IImageResult
     /// <summary>
     /// Gets the background color of this result.
     /// </summary>
-    /// <remarks>Google no longer provides this data; the value is always <see langword="null"/>.</remarks>
+    [JsonConverter(typeof(GoogleColorConverter))]
+    [JsonPropertyName("background_color")]
     public Color? Color { get; }
 
     /// <summary>
